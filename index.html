@@ -1,98 +1,48 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="utf-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Southwest Alberta Map</title>
-
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""
   />
-
   <style>
-    html, body {
+    html, body, #map {
+      height: 100%;
       margin: 0;
       padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #f6f1e7;
     }
-
-    #map {
-      width: 100%;
-      height: 100vh;
-      background: #f6f1e7;
-    }
-
     .leaflet-control-attribution {
-      font-family: Georgia, serif;
-      font-size: 11px;
-      background: rgba(255,255,255,0.75);
-      backdrop-filter: blur(2px);
-    }
-
-    .leaflet-control-zoom a {
-      background: rgba(255,255,255,0.9);
-      color: #333;
-      border: none;
-      box-shadow: 0 1px 8px rgba(0,0,0,0.12);
-    }
-
-    .leaflet-container {
-      font-family: Georgia, serif;
+      font-size: 10px;
     }
   </style>
 </head>
 <body>
   <div id="map"></div>
 
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-  ></script>
-
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // Southwest Alberta focus
-    const bounds = L.latLngBounds(
-      [48.85, -115.40], // SW corner
-      [51.55, -112.85]  // NE corner
-    );
-
-    const map = L.map('map', {
+    const map = L.map("map", {
       zoomControl: true,
-      scrollWheelZoom: true,
-      doubleClickZoom: true,
-      boxZoom: true,
-      dragging: true,
-      touchZoom: true,
-      attributionControl: true
-    });
+      scrollWheelZoom: true
+    }).setView([49.75, -114.55], 8);
 
-    map.fitBounds(bounds, {
-      padding: [10, 10]
-    });
-
-    L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg', {
-      minZoom: 6,
-      maxZoom: 16,
-      bounds: L.latLngBounds([-90, -180], [90, 180]),
-      noWrap: false,
-      attribution:
-        '&copy; <a href="https://stadiamaps.com/" target="_blank" rel="noopener noreferrer">Stadia Maps</a> ' +
-        '&copy; <a href="https://stamen.com/" target="_blank" rel="noopener noreferrer">Stamen Design</a> ' +
-        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>'
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 18,
+      attribution: "&copy; OpenStreetMap contributors"
     }).addTo(map);
 
-    // Keep the user focused on the region, but still allow natural pan/zoom
-    map.setMaxBounds(bounds.pad(0.35));
+    const bounds = L.latLngBounds(
+      [48.85, -116.10],
+      [50.65, -113.00]
+    );
+
+    map.setMaxBounds(bounds);
+    map.fitBounds(bounds);
+
+    L.control.scale().addTo(map);
   </script>
 </body>
 </html>
