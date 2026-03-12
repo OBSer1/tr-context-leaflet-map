@@ -4,13 +4,15 @@
   <meta charset="utf-8" />
   <meta
     name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes"
   />
-  <title>Leaflet JPG Map</title>
+  <title>Leaflet Tiled Image</title>
 
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
   />
 
   <style>
@@ -20,7 +22,7 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #fff;
+      background: #ffffff;
     }
 
     #map {
@@ -28,57 +30,208 @@
       height: 100%;
     }
 
-    .leaflet-container {
-      background: #fff;
+    /* Placeholder: filter menu */
+    .map-menu {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 10px;
+      padding: 12px 14px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.4;
+      min-width: 180px;
+    }
+
+    .map-menu h3 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+    }
+
+    .map-menu label {
+      display: block;
+      margin: 6px 0;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
   <div id="map"></div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Placeholder: filter menu UI -->
+  <div class="map-menu">
+    <h3>Filter Pins</h3>
+    <label><input type="checkbox" checked> Category 1</label>
+    <label><input type="checkbox" checked> Category 2</label>
+    <label><input type="checkbox" checked> Category 3</label>
+  </div>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
   <script>
-    // Replace these with your image dimensions in pixels
+    /*
+      IMPORTANT:
+      Replace imageWidth and imageHeight with the ACTUAL full image dimensions in pixels.
+      For a maxZoom of 5, a square image is often 256 * 2^5 = 8192 px, but set the real values if different.
+    */
     const imageWidth = 9216;
     const imageHeight = 6144;
 
-    // Replace this with your actual MapTiler tile URL
-    const tileUrl = "https://api.maptiler.com/images/019ce303-6cdb-71ce-8d07-c536682a6388/{z}/{x}/{y}?key=HeGrCVsbkGCIdm3hjmI5";
-
-    // Image bounds for CRS.Simple
-    const bounds = [
-      [0, 0],
-      [imageHeight, imageWidth]
-    ];
-
-    const map = L.map("map", {
+    const map = L.map('map', {
       crs: L.CRS.Simple,
-      zoomSnap: 0.25,
-      zoomDelta: 0.25,
-      wheelPxPerZoomLevel: 120,
-      maxBounds: bounds,
-      maxBoundsViscosity: 1.0
-    });
-
-    L.tileLayer(tileUrl, {
-      tileSize: 256,
-      zoomOffset: 0,
       minZoom: 0,
       maxZoom: 5,
-      noWrap: true,
-    }).addTo(map);
-
-    // Start fully zoomed out to show the whole image
-    map.fitBounds(bounds, {
-      animate: false,
-      padding: [0, 0]
+      zoomSnap: 1,
+      zoomDelta: 1,
+      bounceAtZoomLimits: false,
+      maxBoundsViscosity: 1.0,
+      zoomControl: true
     });
 
-    // Prevent zooming out farther than the full-image view
-    map.setMinZoom(map.getZoom());
+    // Define image bounds in simple CRS coordinates
+    const southWest = [0, 0];
+    const northEast = [imageHeight, imageWidth];
+    const imageBounds = L.latLngBounds(southWest, northEast);
 
-    // Keep panning locked to image area
-    map.setMaxBounds(bounds);
+    // Lock panning to the image only
+    map.setMaxBounds(imageBounds);
+
+    // Tile layer
+    const tiledImage = L.tileLayer(
+      'https://api.maptiler.com/images/019ce303-6cdb-71ce-8d07-c536682a6388/{z}/{x}/{y}?key=HeGrCVsbkGCIdm3hjmI5',
+      {
+        tileSize: 256,
+        zoomOffset: 0,
+        minZoom: 0,
+        maxZoom: 5,
+        noWrap: true,
+        bounds: imageBounds,
+        attribution: ''
+      }
+    ).addTo(map);
+
+    // Start by showing the full image, but not more than that
+    map.fitBounds(imageBounds, {
+      padding: [0, 0],
+      animate: false
+    });
+
+    // Prevent zooming farther out than the full image view
+    const fittedMinZoom = map.getBoundsZoom(imageBounds, false);
+    map.setMinZoom(fittedMinZoom);
+    map.setZoom(fittedMinZoom);
+
+    /*
+      ============================================================
+      PLACEHOLDER: CUSTOM PNG PIN LAYERS
+      ============================================================
+    */
+    const pinLayer = L.layerGroup().addTo(map);
+
+    // Example placeholder pin:
+    // const customIcon = L.icon({
+    //   iconUrl: 'path/to/your-pin.png',
+    //   iconSize: [40, 40],
+    //   iconAnchor: [20, 40],
+    //   popupAnchor: [0, -36]
+    // });
+
+    // const marker = L.marker([2000, 3000], { icon: customIcon })
+    //   .bindPopup('<strong>Pin Title</strong><br>Description here.')
+    //   .addTo(pinLayer);
+
+    /*
+      ============================================================
+      PLACEHOLDER: FILTERABLE PIN GROUPS
+      ============================================================
+    */
+    const pinGroups = {
+      category1: L.layerGroup(),
+      category2: L.layerGroup(),
+      category3: L.layerGroup()
+    };
+
+    // Example:
+    // pinGroups.category1.addLayer(
+    //   L.marker([1500, 2500], { icon: customIcon }).bindPopup('Category 1 pin')
+    // );
+    // pinGroups.category1.addTo(map);
+
+    /*
+      ============================================================
+      PLACEHOLDER: ROADS AND BORDERS OVERLAY LAYERS
+      ============================================================
+    */
+    const roadsLayer = L.layerGroup();
+    const bordersLayer = L.layerGroup();
+
+    // Example placeholder polyline:
+    // L.polyline(
+    //   [
+    //     [1000, 1000],
+    //     [1200, 1400],
+    //     [1600, 1800]
+    //   ],
+    //   {
+    //     weight: 3,
+    //     opacity: 0.8
+    //   }
+    // ).addTo(roadsLayer);
+
+    // Example placeholder border:
+    // L.polyline(
+    //   [
+    //     [3000, 1000],
+    //     [3000, 3000]
+    //   ],
+    //   {
+    //     weight: 2,
+    //     dashArray: '8, 8',
+    //     opacity: 0.9
+    //   }
+    // ).addTo(bordersLayer);
+
+    /*
+      ============================================================
+      PLACEHOLDER: LAYER CONTROL
+      ============================================================
+    */
+    L.control.layers(
+      {},
+      {
+        'Pins - Category 1': pinGroups.category1,
+        'Pins - Category 2': pinGroups.category2,
+        'Pins - Category 3': pinGroups.category3,
+        'Roads': roadsLayer,
+        'Borders': bordersLayer
+      },
+      {
+        collapsed: false
+      }
+    ).addTo(map);
+
+    /*
+      ============================================================
+      PLACEHOLDER: FILTER MENU LOGIC
+      ============================================================
+      Connect your custom menu checkboxes to add/remove category layers.
+    */
+    // Example:
+    // const category1Checkbox = document.querySelector('#category1');
+    // category1Checkbox.addEventListener('change', (e) => {
+    //   if (e.target.checked) {
+    //     map.addLayer(pinGroups.category1);
+    //   } else {
+    //     map.removeLayer(pinGroups.category1);
+    //   }
+    // });
   </script>
 </body>
 </html>
