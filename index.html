@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Southwest Alberta Map</title>
+  <title>Fictional Tiled Image Map</title>
 
   <link
     rel="stylesheet"
@@ -12,23 +12,20 @@
 
   <style>
     html, body {
-      width: 100%;
-      height: 100%;
       margin: 0;
       padding: 0;
+      width: 100%;
+      height: 100%;
     }
 
     #map {
       width: 100%;
       height: 100vh;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background: #f5f5f5;
+      background: #ffffff;
     }
 
-    .leaflet-control-attribution {
-      font-size: 10px;
+    .leaflet-container {
+      background: #ffffff;
     }
   </style>
 </head>
@@ -37,39 +34,51 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    const width = 9216;
-    const height = 6144;
-    const bounds = [[0, 0], [height, width]];
+    // Image / tileset settings
+    const imageWidth = 9216;
+    const imageHeight = 6144;
+    const minZoom = 0;
+    const maxZoom = 5;
+    const tileSize = 512;
 
+    // Create map in simple pixel-based coordinates
     const map = L.map("map", {
       crs: L.CRS.Simple,
-      minZoom: 0,
-      maxZoom: 5,
-      zoomControl: true,
-      scrollWheelZoom: true,
-      maxBounds: bounds,
+      minZoom: minZoom,
+      maxZoom: maxZoom,
+      zoomSnap: 1,
+      zoomDelta: 1,
+      wheelPxPerZoomLevel: 120,
       maxBoundsViscosity: 1.0
     });
 
-    const tiles = L.tileLayer(
-      "https://api.maptiler.com/images/019ce303-6cdb-71ce-8d07-c536682a6388/{z}/{x}/{y}.jpg?key=HeGrCVsbkGCIdm3hjmI5",
+    // Convert image pixel dimensions into Leaflet coordinates
+    // Use maxZoom because the image dimensions are full-resolution pixels
+    const southWest = map.unproject([0, imageHeight], maxZoom);
+    const northEast = map.unproject([imageWidth, 0], maxZoom);
+    const bounds = L.latLngBounds(southWest, northEast);
+
+    // Tile layer
+    L.tileLayer(
+      "https://api.maptiler.com/images/019ce303-6cdb-71ce-8d07-c536682a6388/{z}/{x}/{y}?key=HeGrCVsbkGCIdm3hjmI5",
       {
-        tileSize: 512,
-        zoomOffset: -1,
-        minZoom: 0,
-        maxZoom: 5,
+        tileSize: tileSize,
+        minZoom: minZoom,
+        maxZoom: maxZoom,
         noWrap: true,
         bounds: bounds,
-        attribution: "&copy; Timber Ridge Properties"
+        attribution: ""
       }
-    );
+    ).addTo(map);
 
-    tiles.on("tileerror", function (e) {
-      console.error("Tile failed to load:", e.tile.src);
-    });
+    // Keep the user inside the image only
+    map.setMaxBounds(bounds);
 
-    tiles.addTo(map);
+    // Open with the full image showing
     map.fitBounds(bounds);
+
+    // Optional: prevent dragging outside even during momentum/inertia
+    map.panInsideBounds(bounds, { animate: false });
   </script>
 </body>
 </html>
