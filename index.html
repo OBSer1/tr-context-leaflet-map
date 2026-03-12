@@ -1,19 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
   <title>Southwest Alberta Map</title>
+
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
   />
+
   <style>
-    html, body, #map {
+    html,
+    body {
       width: 100%;
+      height: 100%;
       margin: 0;
       padding: 0;
     }
+
+    #map {
+      width: 100%;
+      height: 100vh;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
     .leaflet-control-attribution {
       font-size: 10px;
     }
@@ -24,28 +40,38 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
+    // Image dimensions in pixels
+    const width = 9216;
+    const height = 6144;
+
+    // Bounds for a simple image coordinate system
+    const bounds = [
+      [0, 0],
+      [height, width]
+    ];
+
     const map = L.map("map", {
+      crs: L.CRS.Simple,
       zoomControl: true,
-      scrollWheelZoom: true
-    })
-
-    // Image dimensions (pixels)
-var width = 9216;
-var height = 6144;
-
-// Convert to Leaflet coordinates
-var bounds = [[0,0], [height, width]];
-
-
-    L.tileLayer("https://api.maptiler.com/images/019ce303-6cdb-71ce-8d07-c536682a6388/{z}/{x}/{y}?key=HeGrCVsbkGCIdm3hjmI5", {
+      scrollWheelZoom: true,
       minZoom: 0,
       maxZoom: 5,
-      noWrap: true,
-      attribution: "&copy; Timber Ridge Properties"
-    }).addTo(map);
+      maxBounds: bounds,
+      maxBoundsViscosity: 1.0
+    });
 
+    L.tileLayer(
+      "https://api.maptiler.com/images/019ce303-6cdb-71ce-8d07-c536682a6388/{z}/{x}/{y}?key=HeGrCVsbkGCIdm3hjmI5",
+      {
+        minZoom: 0,
+        maxZoom: 5,
+        noWrap: true,
+        bounds: bounds,
+        attribution: "&copy; Timber Ridge Properties"
+      }
+    ).addTo(map);
 
-    map.setMaxBounds(bounds);
+    // Start with the full image visible
     map.fitBounds(bounds);
 
     L.control.scale().addTo(map);
