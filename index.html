@@ -79,6 +79,18 @@
 
     // Optional: prevent dragging outside even during momentum/inertia
     map.panInsideBounds(bounds, { animate: false });
+
+    // PIN for Timber Ridge
+    var customPin = L.icon({
+    iconUrl: 'https://obser1.github.io/tr-context-leaflet-map/timber_ridge_icon.png',
+    iconSize: [754, 1050],
+    iconAnchor: [3623, 2852],
+    popupAnchor: [0, -40]
+});
+
+L.marker([2000, 3000], {icon: customPin})
+  .addTo(map)
+  .bindPopup("Example location");
   </script>
 </body>
 </html>
