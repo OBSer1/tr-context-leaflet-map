@@ -250,33 +250,143 @@
     }
 
     /* Wrapper for custom pin icons */
-    .custom-pin-wrap {
+    .custom-pin-wrap,
+    .custom-png-wrap {
       background: transparent;
       border: none;
+      overflow: visible !important;
     }
 
-    /* Base pin shape */
-    .pin-badge {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      transform: rotate(-45deg);
-      border: 2px solid white;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.28);
+    /* Shared shell so pin and shadow can animate independently */
+    .pin-shell,
+    .png-pin-shell {
       position: relative;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    .pin-shell {
+      width: 30px;
+      height: 40px;
+    }
+
+    .png-pin-shell {
+      width: 100px;
+      height: 148px;
+    }
+
+    /* Google-Maps style floating shadow */
+    .pin-shadow {
+      position: absolute;
+      left: 50%;
+      bottom: 2px;
+      transform: translateX(-50%) scale(1);
+      border-radius: 50%;
+      background: radial-gradient(
+        ellipse at center,
+        rgba(0,0,0,0.34) 0%,
+        rgba(0,0,0,0.20) 42%,
+        rgba(0,0,0,0.10) 68%,
+        rgba(0,0,0,0.00) 100%
+      );
+      filter: blur(1.4px);
+      transition:
+        transform 180ms ease,
+        opacity 180ms ease,
+        width 180ms ease,
+        height 180ms ease;
+      transform-origin: center center;
+      pointer-events: none;
+    }
+
+    .pin-shell .pin-shadow {
+      width: 18px;
+      height: 7px;
+    }
+
+    .png-pin-shell .pin-shadow {
+      width: 44px;
+      height: 14px;
+      bottom: 0;
+      filter: blur(2.2px);
+    }
+
+    /* Base category pin shape */
+    .pin-badge {
+      width: 18px;
+      height: 18px;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg) translateY(0);
+      border: 2px solid rgba(255,255,255,0.96);
+      position: absolute;
+      left: 50%;
+      top: 3px;
+      margin-left: -11px;
+      box-shadow:
+        0 1px 2px rgba(0,0,0,0.18),
+        0 3px 8px rgba(0,0,0,0.18);
+      transition:
+        transform 180ms ease,
+        box-shadow 180ms ease;
+      will-change: transform;
     }
 
     /* Inner white dot */
     .pin-badge::after {
       content: "";
-      width: 3px;
-      height: 3px;
+      width: 4px;
+      height: 4px;
       background: white;
       border-radius: 50%;
       position: absolute;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%) rotate(45deg);
+    }
+
+    /* PNG image marker styling */
+    .png-pin-image {
+      width: 100px;
+      height: 138px;
+      object-fit: contain;
+      display: block;
+      position: absolute;
+      left: 0;
+      top: 0;
+      transform: translateY(0);
+      transform-origin: center bottom;
+      transition:
+        transform 180ms ease,
+        filter 180ms ease;
+      filter:
+        drop-shadow(0 2px 2px rgba(0,0,0,0.14))
+        drop-shadow(0 7px 12px rgba(0,0,0,0.18));
+      pointer-events: none;
+    }
+
+    /* Hover elevation for both marker types */
+    .pin-hover .pin-badge {
+      transform: rotate(-45deg) translateY(-4px);
+      box-shadow:
+        0 3px 5px rgba(0,0,0,0.20),
+        0 8px 16px rgba(0,0,0,0.22);
+    }
+
+    .pin-hover .png-pin-image {
+      transform: translateY(-5px);
+      filter:
+        drop-shadow(0 3px 3px rgba(0,0,0,0.16))
+        drop-shadow(0 10px 18px rgba(0,0,0,0.22));
+    }
+
+    .pin-hover .pin-shadow {
+      transform: translateX(-50%) scale(1.28);
+      opacity: 0.82;
+    }
+
+    .pin-hover.png-pin-shell .pin-shadow,
+    .pin-hover .png-pin-shell .pin-shadow {
+      transform: translateX(-50%) scale(1.2);
     }
 
     /* Single-category fallback colors */
@@ -405,16 +515,25 @@
       return `conic-gradient(${stops.join(", ")})`;
     }
 
+    // Clean URL text for popup display
+    function getDisplayUrl(url) {
+      if (!url) return "";
+      return url
+        .replace(/^https?:\/\//i, "")
+        .replace(/\/+$/, "");
+    }
+
+    // Normalize URL so links still work
+    function getSafeUrl(url) {
+      if (!url) return "";
+      return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+    }
+
     // GENERATES POPUP HTML FOR EACH PIN
     function makePopup(pin) {
       const hasUrl = !!pin.locationexternalURL;
-
-      let safeUrl = "";
-      if (hasUrl) {
-        safeUrl = pin.locationexternalURL.startsWith("http://") || pin.locationexternalURL.startsWith("https://")
-          ? pin.locationexternalURL
-          : `https://${pin.locationexternalURL}`;
-      }
+      const safeUrl = hasUrl ? getSafeUrl(pin.locationexternalURL) : "";
+      const displayUrl = hasUrl ? getDisplayUrl(pin.locationexternalURL) : "";
 
       const categoryBadges = pin.categories.map(category => {
         return `<div class="category cat-${category}">${getCategoryLabel(category)}</div>`;
@@ -431,7 +550,7 @@
               <h4>${pin.name}</h4>
               <p>${pin.description}</p>
               <div class="popup-url">
-                ${hasUrl ? `<a href="${safeUrl}" target="_blank">${pin.locationexternalURL}</a>` : ``}
+                ${hasUrl ? `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${displayUrl}</a>` : ``}
               </div>
             </div>
           </div>
@@ -442,15 +561,13 @@
     // CREATES A CATEGORY PIN ICON
     function makeCategoryIcon(categories) {
       const uniqueCategories = [...new Set(categories)];
-
-      let pinHtml = "";
+      let badgeHtml = "";
 
       if (uniqueCategories.length === 1) {
-        pinHtml = `<div class="pin-badge pin-${uniqueCategories[0]}"></div>`;
+        badgeHtml = `<div class="pin-badge pin-${uniqueCategories[0]}"></div>`;
       } else {
         const splitBackground = makeSplitPinBackground(uniqueCategories);
-
-        pinHtml = `
+        badgeHtml = `
           <div
             class="pin-badge"
             style="background: ${splitBackground};">
@@ -460,21 +577,31 @@
 
       return L.divIcon({
         className: "custom-pin-wrap",
-        html: pinHtml,
-        iconSize: [22, 22],
-        iconAnchor: [11, 22],
-        popupAnchor: [0, -18]
+        html: `
+          <div class="pin-shell">
+            <div class="pin-shadow"></div>
+            ${badgeHtml}
+          </div>
+        `,
+        iconSize: [30, 40],
+        iconAnchor: [15, 36],
+        popupAnchor: [0, -28]
       });
     }
 
     // CREATES A UNIQUE PNG ICON FOR EACH LOCATION
-    function makeLocationPngIcon(url) {
-      return L.icon({
-        iconUrl: url,
-        iconSize: [100, 138],
-        iconAnchor: [50, 138],
-        popupAnchor: [0, -26],
-        className: "location-png-icon"
+    function makeLocationPngIcon(url, altText) {
+      return L.divIcon({
+        className: "custom-png-wrap",
+        html: `
+          <div class="png-pin-shell">
+            <div class="pin-shadow"></div>
+            <img class="png-pin-image" src="${url}" alt="${altText || "Location icon"}" />
+          </div>
+        `,
+        iconSize: [100, 148],
+        iconAnchor: [50, 148],
+        popupAnchor: [0, -26]
       });
     }
 
@@ -615,6 +742,34 @@
     // ARRAY TO STORE ALL PIN SETS
     const allPinSets = [];
 
+    function setPinHoverState(pinSet, isHovered) {
+      const pngEl = pinSet.pngMarker.getElement();
+      const categoryEl = pinSet.categoryMarker.getElement();
+
+      if (pngEl) {
+        pngEl.classList.toggle("pin-hover", isHovered);
+      }
+
+      if (categoryEl) {
+        categoryEl.classList.toggle("pin-hover", isHovered);
+      }
+    }
+
+    function wireHoverElevation(pinSet) {
+      const onEnter = function () {
+        setPinHoverState(pinSet, true);
+      };
+
+      const onLeave = function () {
+        setPinHoverState(pinSet, false);
+      };
+
+      pinSet.pngMarker.on("mouseover", onEnter);
+      pinSet.pngMarker.on("mouseout", onLeave);
+      pinSet.categoryMarker.on("mouseover", onEnter);
+      pinSet.categoryMarker.on("mouseout", onLeave);
+    }
+
     // CREATE MARKERS FROM DATA
     pinData.forEach(pin => {
 
@@ -627,7 +782,7 @@
 
       // BACK MARKER: unique GitHub PNG
       const pngMarker = L.marker(latlng, {
-        icon: makeLocationPngIcon(pin.uniquePinUrl),
+        icon: makeLocationPngIcon(pin.uniquePinUrl, pin.name),
         title: pin.name,
         pane: "locationPinPane",
         keyboard: false
@@ -659,11 +814,14 @@
       pngMarker.addTo(map);
       categoryMarker.addTo(map);
 
-      allPinSets.push({
+      const pinSet = {
         pin,
         pngMarker,
         categoryMarker
-      });
+      };
+
+      wireHoverElevation(pinSet);
+      allPinSets.push(pinSet);
     });
 
     // FILTER FUNCTION
