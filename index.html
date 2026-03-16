@@ -41,17 +41,20 @@
     }
 
     /* Keep map controls below popups */
+    .leaflet-top,
+    .leaflet-bottom,
     .leaflet-control {
-      z-index: 600 !important;
+      z-index: 700 !important;
     }
 
     /* Ensure popups appear above controls and markers */
     .leaflet-popup-pane {
-      z-index: 1000 !important;
+      z-index: 1400 !important;
     }
 
     .leaflet-popup {
-      z-index: 1000 !important;
+      z-index: 1400 !important;
+      pointer-events: auto;
     }
 
     /* Allow popup content to size naturally */
@@ -178,9 +181,11 @@
 
     /* Container styling for popup cards */
     .popup-card {
-      width: min(78vw, 250px);
-      max-width: 250px;
+      width: min(78vw, 270px);
+      max-width: 270px;
       line-height: 1.35;
+      position: relative;
+      z-index: 2;
     }
 
     /* Row of category badges at top of popup */
@@ -218,50 +223,115 @@
       gap: 10px;
     }
 
-    /* Mosaic gallery */
-    .popup-gallery {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      grid-template-rows: 82px 82px;
-      gap: 5px;
+    /* Carousel gallery */
+    .popup-carousel {
       width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .popup-carousel-stage {
+      position: relative;
+      width: 100%;
+      height: 170px;
       border-radius: 10px;
       overflow: hidden;
       background: #eef2eb;
     }
 
-    .popup-gallery.single-image {
-      grid-template-columns: 1fr;
-      grid-template-rows: 150px;
-    }
-
-    .popup-gallery.two-images {
-      grid-template-columns: 1.5fr 1fr;
-      grid-template-rows: 150px;
-    }
-
-    .popup-gallery-item {
-      position: relative;
-      overflow: hidden;
-      background: #e8ede5;
-    }
-
-    .popup-gallery-item.main {
-      grid-row: 1 / span 2;
-    }
-
-    .popup-gallery.single-image .popup-gallery-item.main,
-    .popup-gallery.two-images .popup-gallery-item.main {
-      grid-row: auto;
-    }
-
-    .popup-gallery-image {
+    .popup-carousel-main-image {
       width: 100%;
       height: 100%;
       display: block;
       object-fit: contain;
       object-position: center;
       background: #eef2eb;
+    }
+
+    .popup-carousel-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 30px;
+      height: 30px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(22, 28, 20, 0.72);
+      color: #ffffff;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 3;
+      transition: background 160ms ease, transform 160ms ease;
+    }
+
+    .popup-carousel-arrow:hover {
+      background: rgba(22, 28, 20, 0.88);
+    }
+
+    .popup-carousel-arrow:active {
+      transform: translateY(-50%) scale(0.96);
+    }
+
+    .popup-carousel-arrow.prev {
+      left: 8px;
+    }
+
+    .popup-carousel-arrow.next {
+      right: 8px;
+    }
+
+    .popup-carousel-thumbs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-bottom: 2px;
+      scrollbar-width: thin;
+    }
+
+    .popup-carousel-thumbs::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .popup-carousel-thumb {
+      flex: 0 0 54px;
+      width: 54px;
+      height: 40px;
+      padding: 0;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      background: #eef2eb;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 160ms ease, transform 160ms ease, opacity 160ms ease;
+      opacity: 0.72;
+    }
+
+    .popup-carousel-thumb:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+
+    .popup-carousel-thumb.active {
+      border-color: #5c7c4f;
+      opacity: 1;
+    }
+
+    .popup-carousel-thumb img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .popup-carousel.single-image .popup-carousel-arrow,
+    .popup-carousel.single-image .popup-carousel-thumbs {
+      display: none;
     }
 
     /* Right side text stack */
@@ -506,21 +576,24 @@
       }
 
       .popup-card {
-        width: min(72vw, 220px);
-        max-width: 220px;
+        width: min(74vw, 230px);
+        max-width: 230px;
       }
 
-      .popup-gallery {
-        grid-template-rows: 72px 72px;
-        gap: 4px;
+      .popup-carousel-stage {
+        height: 138px;
       }
 
-      .popup-gallery.single-image {
-        grid-template-rows: 130px;
+      .popup-carousel-thumb {
+        flex-basis: 48px;
+        width: 48px;
+        height: 36px;
       }
 
-      .popup-gallery.two-images {
-        grid-template-rows: 130px;
+      .popup-carousel-arrow {
+        width: 28px;
+        height: 28px;
+        font-size: 16px;
       }
 
       .popup-card .category {
@@ -586,7 +659,7 @@
     map.getPane("categoryPinPane").style.zIndex = 650;
 
     map.createPane("popupPane");
-    map.getPane("popupPane").style.zIndex = 1000;
+    map.getPane("popupPane").style.zIndex = 1400;
 
     // DEFINE MAP BOUNDS
     const southWest = map.unproject([0, imageHeight], maxZoom);
@@ -711,7 +784,7 @@
         });
       }
 
-      return gallery.slice(0, 4);
+      return gallery.slice(0, 8);
     }
 
     // Escape plain text descriptions so HTML descriptions can be supported safely
@@ -745,27 +818,59 @@
     // Build popup gallery HTML
     function makePopupGallery(pin) {
       const galleryImages = normalizeGalleryImages(pin);
-      const galleryClass =
-        galleryImages.length === 1 ? "popup-gallery single-image" :
-        galleryImages.length === 2 ? "popup-gallery two-images" :
-        "popup-gallery";
 
-      const galleryItemsHtml = galleryImages.map((url, index) => {
-        const itemClass = index === 0 ? "popup-gallery-item main" : "popup-gallery-item";
+      if (!galleryImages.length) {
+        return "";
+      }
+
+      const galleryId = `gallery-${String(pin.name)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")}`;
+
+      const thumbButtonsHtml = galleryImages.map((url, index) => {
         const altText = `${pin.name} photo ${index + 1}`;
         return `
-          <div class="${itemClass}">
+          <button
+            type="button"
+            class="popup-carousel-thumb ${index === 0 ? "active" : ""}"
+            data-index="${index}"
+            aria-label="Show image ${index + 1}">
             <img
-              class="popup-gallery-image"
               src="${escapeAttribute(url)}"
               alt="${escapeAttribute(altText)}"
               loading="lazy"
             />
-          </div>
+          </button>
         `;
       }).join("");
 
-      return `<div class="${galleryClass}">${galleryItemsHtml}</div>`;
+      const firstImage = galleryImages[0];
+      const firstAlt = `${pin.name} photo 1`;
+
+      return `
+        <div
+          class="popup-carousel ${galleryImages.length === 1 ? "single-image" : ""}"
+          data-gallery-id="${escapeAttribute(galleryId)}"
+          data-images='${escapeAttribute(JSON.stringify(galleryImages))}'
+          data-title="${escapeAttribute(pin.name)}"
+          data-current-index="0"
+        >
+          <div class="popup-carousel-stage">
+            <img
+              class="popup-carousel-main-image"
+              src="${escapeAttribute(firstImage)}"
+              alt="${escapeAttribute(firstAlt)}"
+              loading="lazy"
+            />
+            <button type="button" class="popup-carousel-arrow prev" aria-label="Previous image">&#10094;</button>
+            <button type="button" class="popup-carousel-arrow next" aria-label="Next image">&#10095;</button>
+          </div>
+          <div class="popup-carousel-thumbs">
+            ${thumbButtonsHtml}
+          </div>
+        </div>
+      `;
     }
 
     // GENERATES POPUP HTML FOR EACH PIN
@@ -876,7 +981,7 @@
         categories: ["communities", "skiing", "adventure"],
         x: 3365,
         y: 2199,
-       description: `
+        description: `
 <p><strong>Banff</strong> is one of Alberta’s most iconic destinations, famous for its breathtaking Rocky Mountain scenery and world-class outdoor experiences.</p>
 
 <p>Visitors can experience:</p>
@@ -898,7 +1003,7 @@
         categories: ["communities"],
         x: 5214,
         y: 2335,
-       description: `
+        description: `
 <p><strong>Calgary</strong> is a dynamic western city where modern culture meets cowboy heritage, serving the closest international airport to Timber Ridge Properties.</p>
 
 <p>Visitors can experience:</p>
@@ -946,7 +1051,7 @@
         categories: ["communities", "skiing", "adventure"],
         x: 536,
         y: 3633,
-       description: `
+        description: `
 <p><strong>Kimberley</strong> is a charming mountain town in the Kootenay Rockies known for its outdoor adventure, alpine scenery, and welcoming small-town atmosphere.</p>
 
 <p>Visitors can experience:</p>
@@ -1084,7 +1189,7 @@
         categories: ["skiing", "adventure"],
         x: 4687,
         y: 4467,
-description: `
+        description: `
 <p><strong>Castle Mountain Resort</strong> is a rugged alpine destination in the southern Canadian Rockies, known for its legendary powder, dramatic terrain, and authentic mountain culture.</p>
 
 <p>Visitors can experience:</p>
@@ -1097,7 +1202,8 @@ description: `
 </ul>
 
 <p>With year-round adventure and breathtaking mountain landscapes, Castle Mountain is one of the Rockies’ most iconic outdoor playgrounds.</p>
-`,        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Castle_Ski_Icon.png",
+`,
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Castle_Ski_Icon.png",
         locationexternalURL: ["https://www.skicastle.ca", "https://www.sinistersports.ca/sinister7/"]
       },
 
@@ -1106,7 +1212,7 @@ description: `
         categories: ["parks", "golf", "adventure"],
         x: 6574,
         y: 5323,
-description: `
+        description: `
 <p><strong>Waterton Lakes National Park</strong> is a spectacular Rocky Mountain destination where prairie, lakes, and towering peaks meet in one of Canada’s most unique landscapes.</p>
 
 <p>Visitors can experience:</p>
@@ -1119,7 +1225,8 @@ description: `
 </ul>
 
 <p>As part of the Waterton-Glacier International Peace Park, this UNESCO World Heritage Site offers unforgettable scenery and outdoor adventure.</p>
-`,        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/waterton_icon.png",
+`,
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/waterton_icon.png",
         locationexternalURL: "https://watertontourism.com"
       },
 
@@ -1178,6 +1285,91 @@ description: `
       pinSet.categoryMarker.on("mouseout", onLeave);
     }
 
+    function updateCarouselView(carouselEl, nextIndex) {
+      const images = JSON.parse(carouselEl.dataset.images || "[]");
+      if (!images.length) return;
+
+      const title = carouselEl.dataset.title || "Image";
+      const total = images.length;
+      const normalizedIndex = ((nextIndex % total) + total) % total;
+
+      const mainImage = carouselEl.querySelector(".popup-carousel-main-image");
+      const thumbButtons = carouselEl.querySelectorAll(".popup-carousel-thumb");
+
+      carouselEl.dataset.currentIndex = String(normalizedIndex);
+
+      if (mainImage) {
+        mainImage.src = images[normalizedIndex];
+        mainImage.alt = `${title} photo ${normalizedIndex + 1}`;
+      }
+
+      thumbButtons.forEach((btn, index) => {
+        btn.classList.toggle("active", index === normalizedIndex);
+      });
+
+      const activeThumb = carouselEl.querySelector(".popup-carousel-thumb.active");
+      if (activeThumb && typeof activeThumb.scrollIntoView === "function") {
+        activeThumb.scrollIntoView({
+          behavior: "smooth",
+          inline: "center",
+          block: "nearest"
+        });
+      }
+
+      if (map._popup) {
+        setTimeout(function () {
+          keepPopupFullyVisible(map._popup);
+        }, 20);
+      }
+    }
+
+    function initPopupCarousels(container) {
+      if (!container) return;
+
+      const carousels = container.querySelectorAll(".popup-carousel");
+
+      carousels.forEach(carouselEl => {
+        if (carouselEl.dataset.initialized === "true") return;
+
+        carouselEl.dataset.initialized = "true";
+
+        const images = JSON.parse(carouselEl.dataset.images || "[]");
+        if (!images.length) return;
+
+        const prevBtn = carouselEl.querySelector(".popup-carousel-arrow.prev");
+        const nextBtn = carouselEl.querySelector(".popup-carousel-arrow.next");
+        const thumbButtons = carouselEl.querySelectorAll(".popup-carousel-thumb");
+
+        if (prevBtn) {
+          prevBtn.addEventListener("click", function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const currentIndex = Number(carouselEl.dataset.currentIndex || 0);
+            updateCarouselView(carouselEl, currentIndex - 1);
+          });
+        }
+
+        if (nextBtn) {
+          nextBtn.addEventListener("click", function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const currentIndex = Number(carouselEl.dataset.currentIndex || 0);
+            updateCarouselView(carouselEl, currentIndex + 1);
+          });
+        }
+
+        thumbButtons.forEach((btn, index) => {
+          btn.addEventListener("click", function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            updateCarouselView(carouselEl, index);
+          });
+        });
+
+        updateCarouselView(carouselEl, 0);
+      });
+    }
+
     // CREATE MARKERS FROM DATA
     pinData.forEach(pin => {
 
@@ -1206,7 +1398,7 @@ description: `
         autoPan: true,
         keepInView: true,
         closeButton: true,
-        maxWidth: 270,
+        maxWidth: 290,
         autoPanPaddingTopLeft: [20, 20],
         autoPanPaddingBottomRight: [20, 20]
       });
@@ -1374,7 +1566,7 @@ description: `
       if (openPopup) {
         setTimeout(function () {
           keepPopupFullyVisible(openPopup);
-        }, 50);
+        }, 60);
       }
     });
 
@@ -1403,63 +1595,98 @@ description: `
 
     // Figure out how much padding the map needs so popups do not hide behind controls
     function getVisibleMapPadding() {
-      const padding = {
-        topLeft: [20, 20],
-        bottomRight: [20, 20]
-      };
-
       const panel = document.querySelector(".map-ui");
       const bottomRightControls = document.querySelector(".leaflet-bottom.leaflet-right");
 
+      let topInset = 20;
+      let rightInset = 20;
+      let bottomInset = 20;
+      let leftInset = 20;
+
       if (panel) {
         const panelRect = panel.getBoundingClientRect();
-        const isCollapsed = panel.classList.contains("collapsed");
-        padding.topRightWidth = panelRect.width + 24;
-        padding.topRightHeight = panelRect.height + (isCollapsed ? 16 : 24);
-      } else {
-        padding.topRightWidth = 20;
-        padding.topRightHeight = 20;
+        topInset = Math.max(topInset, Math.ceil(panelRect.height) + 18);
+        rightInset = Math.max(rightInset, Math.ceil(panelRect.width) + 24);
       }
 
       if (bottomRightControls) {
         const controlsRect = bottomRightControls.getBoundingClientRect();
-        padding.bottomRight = [
-          Math.ceil(controlsRect.width) + 20,
-          Math.ceil(controlsRect.height) + 20
-        ];
+        rightInset = Math.max(rightInset, Math.ceil(controlsRect.width) + 20);
+        bottomInset = Math.max(bottomInset, Math.ceil(controlsRect.height) + 20);
       }
 
-      return padding;
+      return {
+        topLeft: [leftInset, topInset],
+        bottomRight: [rightInset, bottomInset]
+      };
     }
 
-    // Re-pan popup so it stays fully on screen
+    // Re-pan popup so it stays fully on screen and away from controls
     function keepPopupFullyVisible(popup) {
-      if (!popup || !popup._map) return;
+      if (!popup || !popup._map || !popup._container) return;
 
       const padding = getVisibleMapPadding();
 
+      popup.options.autoPan = true;
+      popup.options.keepInView = true;
       popup.options.autoPanPaddingTopLeft = padding.topLeft;
       popup.options.autoPanPaddingBottomRight = padding.bottomRight;
-      popup.options.keepInView = true;
 
       popup.update();
 
       setTimeout(function () {
-        if (!popup._map) return;
+        if (!popup._map || !popup._container) return;
 
-        map.panInside(popup.getLatLng(), {
-          paddingTopLeft: padding.topLeft,
-          paddingBottomRight: padding.bottomRight,
-          animate: true
-        });
+        popup._adjustPan();
+
+        setTimeout(function () {
+          if (!popup._map || !popup._container) return;
+
+          const mapRect = map.getContainer().getBoundingClientRect();
+          const popupRect = popup._container.getBoundingClientRect();
+
+          const safeLeft = mapRect.left + padding.topLeft[0];
+          const safeTop = mapRect.top + padding.topLeft[1];
+          const safeRight = mapRect.right - padding.bottomRight[0];
+          const safeBottom = mapRect.bottom - padding.bottomRight[1];
+
+          let dx = 0;
+          let dy = 0;
+
+          if (popupRect.right > safeRight) {
+            dx = popupRect.right - safeRight;
+          } else if (popupRect.left < safeLeft) {
+            dx = popupRect.left - safeLeft;
+          }
+
+          if (popupRect.bottom > safeBottom) {
+            dy = popupRect.bottom - safeBottom;
+          } else if (popupRect.top < safeTop) {
+            dy = popupRect.top - safeTop;
+          }
+
+          if (dx !== 0 || dy !== 0) {
+            map.panBy([dx, dy], {
+              animate: true,
+              duration: 0.25
+            });
+          }
+        }, 30);
       }, 20);
     }
 
     map.on("popupopen", function (e) {
+      initPopupCarousels(e.popup.getElement());
       keepPopupFullyVisible(e.popup);
     });
 
     map.on("resize", function () {
+      if (map._popup) {
+        keepPopupFullyVisible(map._popup);
+      }
+    });
+
+    map.on("moveend zoomend", function () {
       if (map._popup) {
         keepPopupFullyVisible(map._popup);
       }
@@ -1524,7 +1751,7 @@ description: `
         if (map._popup) {
           setTimeout(function () {
             keepPopupFullyVisible(map._popup);
-          }, 50);
+          }, 60);
         }
 
       } catch (error) {
