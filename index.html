@@ -261,10 +261,12 @@
 
     // LAYER GROUPS (used for filtering categories)
     const categoryLayers = {
-      resort: L.layerGroup().addTo(map),
+      communities: L.layerGroup().addTo(map),
       golf: L.layerGroup().addTo(map),
+      fishing: L.layerGroup().addTo(map),
+      skiing: L.layerGroup().addTo(map),
       adventure: L.layerGroup().addTo(map),
-      "real-estate": L.layerGroup().addTo(map)
+      parks: L.layerGroup().addTo(map),
     };
 
     // DATA FOR ALL MAP PINS
