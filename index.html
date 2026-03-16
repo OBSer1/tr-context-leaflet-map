@@ -839,7 +839,6 @@
             <img
               src="${escapeAttribute(url)}"
               alt="${escapeAttribute(altText)}"
-   
             />
           </button>
         `;
@@ -861,7 +860,6 @@
               class="popup-carousel-main-image"
               src="${escapeAttribute(firstImage)}"
               alt="${escapeAttribute(firstAlt)}"
-         
             />
             <button type="button" class="popup-carousel-arrow prev" aria-label="Previous image">&#10094;</button>
             <button type="button" class="popup-carousel-arrow next" aria-label="Next image">&#10095;</button>
@@ -1252,10 +1250,10 @@
         uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/lundbreck_falls_icon.png",
         locationexternalURL: ["https://www.albertaparks.ca/parks/south/lundbreck-falls-pra/", "https://www.oldmanriverbrewing.com"],
         popupGalleryImages: [
-  "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/lundbreckfalls1.jpeg",
-  "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/lundbreckfalls2.jpeg",
-  "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/lundbreckfalls3.jpeg"
-]
+          "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/lundbreckfalls1.jpeg",
+          "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/lundbreckfalls2.jpeg",
+          "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/lundbreckfalls3.jpeg"
+        ]
       }
     ];
 
@@ -1642,8 +1640,6 @@
       setTimeout(function () {
         if (!popup._map || !popup._container) return;
 
-        popup._adjustPan();
-
         setTimeout(function () {
           if (!popup._map || !popup._container) return;
 
@@ -1686,12 +1682,6 @@
     });
 
     map.on("resize", function () {
-      if (map._popup) {
-        keepPopupFullyVisible(map._popup);
-      }
-    });
-
-    map.on("moveend zoomend", function () {
       if (map._popup) {
         keepPopupFullyVisible(map._popup);
       }
