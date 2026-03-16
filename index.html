@@ -109,7 +109,15 @@
       line-height: 1.45;
     }
 
-    /* Category badge at top of popup */
+    /* Row of category badges at top of popup */
+    .popup-categories {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    /* Category badge */
     .popup-card .category {
       display: inline-block;
       font-size: 11px;
@@ -117,13 +125,12 @@
       text-transform: uppercase;
       padding: 4px 8px;
       border-radius: 999px;
-      margin-bottom: 10px;
       color: #fff;
     }
 
     /* Category badge colors */
     .cat-timberridgeproperties { background: #b7791f; }
-    .cat-communities { background: #b7791f; }    
+    .cat-communities { background: #b7791f; }
     .cat-golf { background: #b7791f; }
     .cat-fishing { background: #2f855a; }
     .cat-skiing { background: #2b6cb0; }
@@ -214,7 +221,7 @@
 
     /* Pin colors by category */
     .pin-timberridgeproperties { background: #b7791f; }
-    .pin-communities { background: #b7791f; }    
+    .pin-communities { background: #b7791f; }
     .pin-golf { background: #b7791f; }
     .pin-fishing { background: #2f855a; }
     .pin-skiing { background: #2b6cb0; }
@@ -290,8 +297,8 @@
       return map.unproject([x, y], maxZoom);
     }
 
-    // Nicely formats category names for popup label text
-    function getCategoryLabel(categories) {
+    // Nicely formats a single category name
+    function getCategoryLabel(category) {
       const labelMap = {
         timberridgeproperties: "Timber Ridge Properties",
         communities: "Communities",
@@ -302,18 +309,16 @@
         parks: "Parks"
       };
 
-      return categories.map(cat => labelMap[cat] || cat).join(", ");
+      return labelMap[category] || category;
     }
 
-    // Returns first category for styling the visible colored pin and popup badge
+    // Returns first category for styling the visible colored pin
     function getPrimaryCategory(pin) {
       return pin.primaryCategory || pin.categories[0];
     }
 
     // GENERATES POPUP HTML FOR EACH PIN
     function makePopup(pin) {
-      const primaryCategory = getPrimaryCategory(pin);
-      const categoryLabel = pin.categoryLabel || getCategoryLabel(pin.categories);
       const hasUrl = !!pin.locationexternalURL;
 
       let safeUrl = "";
@@ -323,9 +328,15 @@
           : `https://${pin.locationexternalURL}`;
       }
 
+      const categoryBadges = pin.categories.map(category => {
+        return `<div class="category cat-${category}">${getCategoryLabel(category)}</div>`;
+      }).join("");
+
       return `
         <div class="popup-card">
-          <div class="category cat-${primaryCategory}">${categoryLabel}</div>
+          <div class="popup-categories">
+            ${categoryBadges}
+          </div>
           <div class="popup-main">
             <img class="popup-thumb" src="${pin.uniquePinUrl}" alt="${pin.name} icon" />
             <div class="popup-text">
@@ -583,7 +594,10 @@
           selectedCategories.includes(category)
         );
 
-        const categorySearchText = (pin.categoryLabel || getCategoryLabel(pin.categories)).toLowerCase();
+        const categorySearchText = pin.categories
+          .map(category => getCategoryLabel(category))
+          .join(", ")
+          .toLowerCase();
 
         const matchesSearch =
           pin.name.toLowerCase().includes(searchText) ||
