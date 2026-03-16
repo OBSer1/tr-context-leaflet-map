@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
 
-  
   <!-- Character encoding for proper text rendering -->
   <meta charset="utf-8" />
 
@@ -228,10 +227,23 @@
     }
 
     /* Popup description text */
-    .popup-card p {
+    .popup-description {
       margin: 0 0 6px 0;
       font-size: 13px;
       color: #364233;
+    }
+
+    .popup-description p {
+      margin: 0 0 8px 0;
+    }
+
+    .popup-description ul {
+      margin: 0 0 8px 18px;
+      padding: 0;
+    }
+
+    .popup-description li {
+      margin: 0 0 4px 0;
     }
 
     /* Popup URL block */
@@ -552,6 +564,29 @@
         .filter(url => url.length > 0);
     }
 
+    // Escape plain text descriptions so HTML descriptions can be supported safely
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    // Detect whether a description contains HTML
+    function formatDescription(description) {
+      if (description == null) return "";
+      const text = String(description).trim();
+      const looksLikeHtml = /<[^>]+>/.test(text);
+
+      if (looksLikeHtml) {
+        return text;
+      }
+
+      return `<p>${escapeHtml(text)}</p>`;
+    }
+
     // GENERATES POPUP HTML FOR EACH PIN
     function makePopup(pin) {
       const urls = normalizeUrls(pin.locationexternalURL);
@@ -559,7 +594,6 @@
       const urlLinksHtml = urls.map(url => {
         const safeUrl = getSafeUrl(url);
         const displayUrl = getDisplayUrl(url);
-
         return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${displayUrl}</a>`;
       }).join("");
 
@@ -576,7 +610,7 @@
             <img class="popup-thumb" src="${pin.uniquePinUrl}" alt="${pin.name} icon" />
             <div class="popup-text">
               <h4>${pin.name}</h4>
-              <p>${pin.description}</p>
+              <div class="popup-description">${formatDescription(pin.description)}</div>
               <div class="popup-url">
                 ${urlLinksHtml}
               </div>
@@ -676,38 +710,30 @@
         locationexternalURL: "https://www.visitcalgary.com"
       },
 
-     {
-  name: "Drumheller",
-  categories: ["communities", "parks", "adventure"],
-  x: 7039,
-  y: 2013,
-
-  description: `
-    <div class="popup-description">
-
-      <p>Drumheller is one of Alberta’s most iconic destinations, famous for its dramatic badlands landscape and dinosaur heritage.</p>
-
-      <p>Visitors can experience:</p>
-
-      <ul>
-        <li>The world-renowned Royal Tyrrell Museum</li>
-        <li>The hoodoos and badlands hiking trails</li>
-        <li>Historic coal mining and prairie culture</li>
-      </ul>
-
-      <p>It is one of the most unique landscapes in Canada.</p>
-
-    </div>
-  `,
-
-  uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/drumheller_icon.png",
-
-  locationexternalURL: [
-    "https://www.traveldrumheller.com",
-    "https://tyrrellmuseum.com",
-    "https://www.albertaparks.ca/parks/south/dinosaur-pp/"
-  ]
-},
+      {
+        name: "Drumheller",
+        categories: ["communities", "parks", "adventure"],
+        x: 7039,
+        y: 2013,
+        description: `
+          <div>
+            <p>Drumheller is one of Alberta’s most iconic destinations, famous for its dramatic badlands landscape and dinosaur heritage.</p>
+            <p>Visitors can experience:</p>
+            <ul>
+              <li>The world-renowned Royal Tyrrell Museum</li>
+              <li>The hoodoos and badlands hiking trails</li>
+              <li>Historic coal mining and prairie culture</li>
+            </ul>
+            <p>It is one of the most unique landscapes in Canada.</p>
+          </div>
+        `,
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/drumheller_icon.png",
+        locationexternalURL: [
+          "https://www.traveldrumheller.com",
+          "https://tyrrellmuseum.com",
+          "https://www.albertaparks.ca/parks/south/dinosaur-pp/"
+        ]
+      },
 
       {
         name: "Kimberley",
@@ -857,10 +883,7 @@
       }).bindPopup(makePopup(pin), {
         pane: "popupPane",
         autoPan: true,
-        keepInView: true,
         closeButton: true,
-        autoPanPaddingTopLeft: [20, 20],
-        autoPanPaddingBottomRight: [20, 20],
         maxWidth: 360
       });
 
@@ -888,7 +911,8 @@
     // FILTER FUNCTION
     function applyFilters() {
 
-      const searchText = document.getElementById("pin-search").value.trim().toLowerCase();
+      const searchInputEl = document.getElementById("pin-search");
+      const searchText = searchInputEl ? searchInputEl.value.trim().toLowerCase() : "";
 
       const selectedCategories = [];
       document.querySelectorAll(".category-filter").forEach(cb => {
@@ -896,7 +920,6 @@
       });
 
       allPinSets.forEach(pinSet => {
-
         const pin = pinSet.pin;
 
         const matchesCategory = pin.categories.some(category =>
@@ -908,9 +931,13 @@
           .join(", ")
           .toLowerCase();
 
+        const descriptionText = String(pin.description || "")
+          .replace(/<[^>]*>/g, " ")
+          .toLowerCase();
+
         const matchesSearch =
           pin.name.toLowerCase().includes(searchText) ||
-          pin.description.toLowerCase().includes(searchText) ||
+          descriptionText.includes(searchText) ||
           categorySearchText.includes(searchText);
 
         const shouldShow = matchesCategory && matchesSearch;
@@ -932,47 +959,6 @@
         }
       });
     }
-
-    // Measure current control padding so popups don't get hidden by the filter panel
-    function getPopupPadding() {
-      const panel = document.querySelector(".map-ui");
-      const isCollapsed = panel && panel.classList.contains("collapsed");
-
-      let topRightX = 20;
-      let topRightY = 20;
-
-      if (panel && !isCollapsed) {
-        topRightX = panel.offsetWidth + 40;
-        topRightY = panel.offsetHeight + 30;
-      } else if (panel && isCollapsed) {
-        topRightX = panel.offsetWidth + 20;
-        topRightY = panel.offsetHeight + 20;
-      }
-
-      return {
-        topLeft: [20, 20],
-        bottomRight: [20, 20],
-        topRightX,
-        topRightY
-      };
-    }
-
-    // Re-pan popup after opening so it stays fully visible
-    map.on("popupopen", function (e) {
-      const popup = e.popup;
-      const padding = getPopupPadding();
-
-      popup.options.autoPanPaddingTopLeft = padding.topLeft;
-      popup.options.autoPanPaddingBottomRight = [padding.topRightX, 20];
-
-      setTimeout(function () {
-        map.panInside(popup.getLatLng(), {
-          paddingTopLeft: padding.topLeft,
-          paddingBottomRight: [padding.topRightX, 20],
-          animate: true
-        });
-      }, 10);
-    });
 
     // CUSTOM CONTROL PANEL
     const FilterControl = L.Control.extend({
@@ -1038,19 +1024,6 @@
       } else {
         panelToggleButton.textContent = "Hide";
         panelToggleButton.setAttribute("aria-label", "Hide panel");
-      }
-
-      // If a popup is open, re-pan it after panel size changes
-      const openPopup = map._popup;
-      if (openPopup) {
-        setTimeout(function () {
-          const padding = getPopupPadding();
-          map.panInside(openPopup.getLatLng(), {
-            paddingTopLeft: padding.topLeft,
-            paddingBottomRight: [padding.topRightX, 20],
-            animate: true
-          });
-        }, 10);
       }
     });
 
