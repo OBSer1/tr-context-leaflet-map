@@ -234,11 +234,14 @@
       color: #364233;
     }
 
-    /* Popup URL */
+    /* Popup URL block */
     .popup-url {
       font-size: 12px;
       color: #5c7c4f;
       word-break: break-word;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
     .popup-url a {
@@ -530,11 +533,35 @@
       return /^https?:\/\//i.test(url) ? url : `https://${url}`;
     }
 
+    // Convert locationexternalURL into a clean array of URLs
+    function normalizeUrls(urlValue) {
+      if (!urlValue) return [];
+
+      let urls = [];
+
+      if (Array.isArray(urlValue)) {
+        urls = urlValue;
+      } else if (typeof urlValue === "string") {
+        urls = urlValue.split(",");
+      } else {
+        return [];
+      }
+
+      return urls
+        .map(url => String(url).trim())
+        .filter(url => url.length > 0);
+    }
+
     // GENERATES POPUP HTML FOR EACH PIN
     function makePopup(pin) {
-      const hasUrl = !!pin.locationexternalURL;
-      const safeUrl = hasUrl ? getSafeUrl(pin.locationexternalURL) : "";
-      const displayUrl = hasUrl ? getDisplayUrl(pin.locationexternalURL) : "";
+      const urls = normalizeUrls(pin.locationexternalURL);
+
+      const urlLinksHtml = urls.map(url => {
+        const safeUrl = getSafeUrl(url);
+        const displayUrl = getDisplayUrl(url);
+
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${displayUrl}</a>`;
+      }).join("");
 
       const categoryBadges = pin.categories.map(category => {
         return `<div class="category cat-${category}">${getCategoryLabel(category)}</div>`;
@@ -551,7 +578,7 @@
               <h4>${pin.name}</h4>
               <p>${pin.description}</p>
               <div class="popup-url">
-                ${hasUrl ? `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${displayUrl}</a>` : ``}
+                ${urlLinksHtml}
               </div>
             </div>
           </div>
@@ -686,7 +713,7 @@
         y: 3806,
         description: "Proposed resort destination with lodging and amenities.",
         uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Fernie_Icon.png",
-        locationexternalURL: "https://tourismfernie.com , https://skifernie.com"
+        locationexternalURL: ["https://tourismfernie.com", "https://skifernie.com"]
       },
 
       {
