@@ -30,21 +30,21 @@
     /* Main container that holds the map */
     #map {
       width: 100%;
-      height: 100vh; /* Full viewport height */
-      background: #132b06; /* Background color shown while map loads */
+      height: 100vh;
+      background: #132b06;
     }
 
     /* Default styling applied to the Leaflet map container */
     .leaflet-container {
-      background: #ffffff; /* Background behind tiles */
-      font-family: Arial, sans-serif; /* Default font for map UI */
+      background: #ffffff;
+      font-family: Arial, sans-serif;
     }
 
     /* Styling for the floating UI control panel (search + filters) */
     .map-ui {
-      background: rgba(255, 255, 255, 0.96); /* Slight transparency */
-      border-radius: 12px; /* Rounded corners */
-      box-shadow: 0 6px 20px rgba(0,0,0,0.18); /* Soft shadow */
+      background: rgba(255, 255, 255, 0.96);
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.18);
       padding: 12px;
       min-width: 220px;
     }
@@ -173,7 +173,7 @@
       color: #364233;
     }
 
-    /* Popup URL placeholder */
+    /* Popup URL */
     .popup-url {
       font-size: 12px;
       color: #5c7c4f;
@@ -195,22 +195,22 @@
       border: none;
     }
 
-    /* Base shape of the custom map pin */
+    /* Base pin shape */
     .pin-badge {
-      width: 10px;
-      height: 10px;
-      border-radius: 50% 50% 50% 50%;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
       transform: rotate(-45deg);
       border: 2px solid white;
       box-shadow: 0 2px 10px rgba(0,0,0,0.28);
       position: relative;
     }
 
-    /* White dot in center of pin */
+    /* Inner white dot */
     .pin-badge::after {
       content: "";
-      width: 2px;
-      height: 2px;
+      width: 3px;
+      height: 3px;
       background: white;
       border-radius: 50%;
       position: absolute;
@@ -219,7 +219,7 @@
       transform: translate(-50%, -50%);
     }
 
-    /* Pin colors by category */
+    /* Single-category fallback colors */
     .pin-timberridgeproperties { background: #b7791f; }
     .pin-communities { background: #b7791f; }
     .pin-golf { background: #b7791f; }
@@ -233,10 +233,8 @@
 
 <body>
 
-  <!-- Main container where Leaflet renders the map -->
   <div id="map"></div>
 
-  <!-- Leaflet JavaScript library -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
@@ -259,7 +257,7 @@
       maxBoundsViscosity: 1.0
     });
 
-    // CREATE PANES SO THE UNIQUE PNG PINS SIT BEHIND THE CATEGORY PINS
+    // CREATE PANES
     map.createPane("locationPinPane");
     map.getPane("locationPinPane").style.zIndex = 450;
 
@@ -269,7 +267,7 @@
     map.createPane("popupPane");
     map.getPane("popupPane").style.zIndex = 700;
 
-    // DEFINE MAP BOUNDS BASED ON IMAGE SIZE
+    // DEFINE MAP BOUNDS
     const southWest = map.unproject([0, imageHeight], maxZoom);
     const northEast = map.unproject([imageWidth, 0], maxZoom);
     const bounds = L.latLngBounds(southWest, northEast);
@@ -297,7 +295,7 @@
       return map.unproject([x, y], maxZoom);
     }
 
-    // Nicely formats a single category name
+    // Category label lookup
     function getCategoryLabel(category) {
       const labelMap = {
         timberridgeproperties: "Timber Ridge Properties",
@@ -312,9 +310,39 @@
       return labelMap[category] || category;
     }
 
-    // Returns first category for styling the visible colored pin
+    // Category color lookup
+    function getCategoryColor(category) {
+      const colorMap = {
+        timberridgeproperties: "#b7791f",
+        communities: "#b7791f",
+        golf: "#b7791f",
+        fishing: "#2f855a",
+        skiing: "#2b6cb0",
+        adventure: "#805ad5",
+        parks: "#805ad5"
+      };
+
+      return colorMap[category] || "#666666";
+    }
+
+    // Returns first category for single-color fallback logic if needed
     function getPrimaryCategory(pin) {
       return pin.primaryCategory || pin.categories[0];
+    }
+
+    // Build conic-gradient string for multi-category pin
+    function makeSplitPinBackground(categories) {
+      const uniqueCategories = [...new Set(categories)];
+      const segmentSize = 360 / uniqueCategories.length;
+
+      const stops = uniqueCategories.map((category, index) => {
+        const start = index * segmentSize;
+        const end = (index + 1) * segmentSize;
+        const color = getCategoryColor(category);
+        return `${color} ${start}deg ${end}deg`;
+      });
+
+      return `conic-gradient(${stops.join(", ")})`;
     }
 
     // GENERATES POPUP HTML FOR EACH PIN
@@ -351,11 +379,30 @@
       `;
     }
 
-    // CREATES A CUSTOM COLORED PIN ICON
-    function makeCategoryIcon(category) {
+    // CREATES A CATEGORY PIN ICON
+    // Single-category = normal solid color
+    // Multi-category = split color using conic-gradient
+    function makeCategoryIcon(categories) {
+      const uniqueCategories = [...new Set(categories)];
+
+      let pinHtml = "";
+
+      if (uniqueCategories.length === 1) {
+        pinHtml = `<div class="pin-badge pin-${uniqueCategories[0]}"></div>`;
+      } else {
+        const splitBackground = makeSplitPinBackground(uniqueCategories);
+
+        pinHtml = `
+          <div
+            class="pin-badge"
+            style="background: ${splitBackground};">
+          </div>
+        `;
+      }
+
       return L.divIcon({
         className: "custom-pin-wrap",
-        html: `<div class="pin-badge pin-${category}"></div>`,
+        html: pinHtml,
         iconSize: [22, 22],
         iconAnchor: [11, 22],
         popupAnchor: [0, -18]
@@ -385,16 +432,11 @@
     ];
 
     // DATA FOR ALL MAP PINS
-    // IMPORTANT:
-    // - Use categories: [...] for every pin
-    // - A pin can belong to more than one category
-    // - It will still only be drawn once
     const pinData = [
 
       {
         name: "Timber Ridge Properties",
         categories: ["timberridgeproperties"],
-        categoryLabel: "Timber Ridge Properties",
         x: 4005,
         y: 3758,
         description: "Primary development area and central project location.",
@@ -404,7 +446,6 @@
       {
         name: "Banff",
         categories: ["communities", "skiing", "adventure"],
-        categoryLabel: "Communities, Skiing, Adventure",
         x: 3365,
         y: 2199,
         description: "Proposed resort destination with lodging and amenities.",
@@ -415,27 +456,24 @@
       {
         name: "Calgary",
         categories: ["communities"],
-        categoryLabel: "Communities",
         x: 5214,
         y: 2335,
         description: "Proposed resort destination with lodging and amenities.",
         uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Calgary_logo.png"
       },
-      
+
       {
         name: "Drumheller",
         categories: ["communities"],
-        categoryLabel: "Communities",
         x: 7039,
         y: 2013,
         description: "Proposed resort destination with lodging and amenities.",
         uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/drumheller_icon.png"
       },
-      
+
       {
         name: "Kimberley",
         categories: ["communities"],
-        categoryLabel: "Communities",
         x: 536,
         y: 3633,
         description: "Proposed resort destination with lodging and amenities.",
@@ -445,38 +483,34 @@
       {
         name: "Fairmont Hotsprings",
         categories: ["communities"],
-        categoryLabel: "Communities",
         x: 1727,
         y: 3224,
         description: "Proposed resort destination with lodging and amenities.",
         uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/fairmont_icon.png"
       },
-      
+
       {
         name: "Fernie",
         categories: ["communities"],
-        categoryLabel: "Communities",
         x: 2959,
         y: 3806,
         description: "Proposed resort destination with lodging and amenities.",
         uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Fernie_Icon.png"
       },
-      
+
       {
         name: "Pincher Creek",
         categories: ["communities"],
-        categoryLabel: "Communities",
         x: 6020,
         y: 4062,
         description: "Proposed resort destination with lodging and amenities.",
         uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Pincher_Icon.png",
         locationexternalURL: "www.pinchercreek.ca"
       },
-      
+
       {
         name: "Lethbridge",
         categories: ["communities"],
-        categoryLabel: "Communities",
         x: 8588,
         y: 3750,
         description: "Proposed resort destination with lodging and amenities.",
@@ -486,7 +520,6 @@
       {
         name: "CNP Golf Club",
         categories: ["golf"],
-        categoryLabel: "Golf",
         x: 4427,
         y: 3736,
         description: "Future championship golf course with mountain views.",
@@ -496,7 +529,6 @@
       {
         name: "Castle Mountain Ski Resort",
         categories: ["skiing", "adventure"],
-        categoryLabel: "Skiing, Adventure",
         x: 4687,
         y: 4467,
         description: "Water access area for fishing, paddling, and day use.",
@@ -506,17 +538,15 @@
       {
         name: "Waterton National Park",
         categories: ["parks", "adventure"],
-        categoryLabel: "Parks, Adventure",
         x: 6574,
         y: 5323,
         description: "Boutique cabin enclave with premium lot positioning.",
         uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/waterton_icon.png"
       },
-      
+
       {
         name: "Lundbreck Falls",
         categories: ["adventure", "parks"],
-        categoryLabel: "Adventure, Parks",
         x: 5229,
         y: 3986,
         description: "Boutique cabin enclave with premium lot positioning.",
@@ -525,19 +555,17 @@
     ];
 
     // ARRAY TO STORE ALL PIN SETS
-    // Each location exists once, even if it belongs to multiple categories
     const allPinSets = [];
 
     // CREATE MARKERS FROM DATA
     pinData.forEach(pin => {
 
-      // Safety fallback so older single-category objects still work if needed
+      // Safety fallback so older single-category objects still work
       if (!pin.categories && pin.category) {
         pin.categories = [pin.category];
       }
 
       const latlng = pointFromImagePixels(pin.x, pin.y);
-      const primaryCategory = getPrimaryCategory(pin);
 
       // BACK MARKER: unique GitHub PNG
       const pngMarker = L.marker(latlng, {
@@ -547,9 +575,9 @@
         keyboard: false
       });
 
-      // FRONT MARKER: existing category pin
+      // FRONT MARKER: category pin, now split if multi-category
       const categoryMarker = L.marker(latlng, {
-        icon: makeCategoryIcon(primaryCategory),
+        icon: makeCategoryIcon(pin.categories),
         title: pin.name,
         pane: "categoryPinPane"
       }).bindPopup(makePopup(pin), {
@@ -574,7 +602,7 @@
       });
     });
 
-    // FILTER FUNCTION (search + category checkboxes)
+    // FILTER FUNCTION
     function applyFilters() {
 
       const searchText = document.getElementById("pin-search").value.trim().toLowerCase();
@@ -588,8 +616,6 @@
 
         const pin = pinSet.pin;
 
-        // Multi-category support:
-        // show pin if ANY of its categories are selected
         const matchesCategory = pin.categories.some(category =>
           selectedCategories.includes(category)
         );
@@ -624,7 +650,7 @@
       });
     }
 
-    // CUSTOM CONTROL PANEL (SEARCH + FILTERS)
+    // CUSTOM CONTROL PANEL
     const FilterControl = L.Control.extend({
 
       options: {
