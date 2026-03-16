@@ -173,7 +173,8 @@
 
     /* Container styling for popup cards */
     .popup-card {
-      min-width: 280px;
+      min-width: 300px;
+      max-width: 340px;
       line-height: 1.45;
     }
 
@@ -207,19 +208,54 @@
 
     /* New popup content row */
     .popup-main {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-}
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
 
-     /* Left image in popup */
-.popup-thumb {
-  width: 150px;
-  height: 237px;
-  flex: 0 0 150px;
-  object-fit: contain;
-  display: block;
-}
+    /* Mosaic gallery */
+    .popup-gallery {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      grid-template-rows: 118px 118px;
+      gap: 6px;
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #eef2eb;
+    }
+
+    .popup-gallery.single-image {
+      grid-template-columns: 1fr;
+      grid-template-rows: 240px;
+    }
+
+    .popup-gallery.two-images {
+      grid-template-columns: 1.5fr 1fr;
+      grid-template-rows: 240px;
+    }
+
+    .popup-gallery-item {
+      position: relative;
+      overflow: hidden;
+      background: #e8ede5;
+    }
+
+    .popup-gallery-item.main {
+      grid-row: 1 / span 2;
+    }
+
+    .popup-gallery.single-image .popup-gallery-item.main,
+    .popup-gallery.two-images .popup-gallery-item.main {
+      grid-row: auto;
+    }
+
+    .popup-gallery-image {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
 
     /* Right side text stack */
     .popup-text {
@@ -604,6 +640,26 @@
         .filter(url => url.length > 0);
     }
 
+    // Convert gallery input into a clean array of URLs
+    function normalizeGalleryImages(pin) {
+      const gallery = [];
+
+      if (pin.uniquePinUrl) {
+        gallery.push(String(pin.uniquePinUrl).trim());
+      }
+
+      if (Array.isArray(pin.popupGalleryImages)) {
+        pin.popupGalleryImages.forEach(url => {
+          const cleanUrl = String(url || "").trim();
+          if (cleanUrl && !gallery.includes(cleanUrl)) {
+            gallery.push(cleanUrl);
+          }
+        });
+      }
+
+      return gallery.slice(0, 4);
+    }
+
     // Escape plain text descriptions so HTML descriptions can be supported safely
     function escapeHtml(str) {
       return String(str)
@@ -612,6 +668,11 @@
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
+    }
+
+    // Escape HTML for attribute values
+    function escapeAttribute(str) {
+      return escapeHtml(str).replace(/`/g, "&#96;");
     }
 
     // Detect whether a description contains HTML
@@ -625,6 +686,32 @@
       }
 
       return `<p>${escapeHtml(text)}</p>`;
+    }
+
+    // Build popup gallery HTML
+    function makePopupGallery(pin) {
+      const galleryImages = normalizeGalleryImages(pin);
+      const galleryClass =
+        galleryImages.length === 1 ? "popup-gallery single-image" :
+        galleryImages.length === 2 ? "popup-gallery two-images" :
+        "popup-gallery";
+
+      const galleryItemsHtml = galleryImages.map((url, index) => {
+        const itemClass = index === 0 ? "popup-gallery-item main" : "popup-gallery-item";
+        const altText = `${pin.name} photo ${index + 1}`;
+        return `
+          <div class="${itemClass}">
+            <img
+              class="popup-gallery-image"
+              src="${escapeAttribute(url)}"
+              alt="${escapeAttribute(altText)}"
+              loading="lazy"
+            />
+          </div>
+        `;
+      }).join("");
+
+      return `<div class="${galleryClass}">${galleryItemsHtml}</div>`;
     }
 
     // GENERATES POPUP HTML FOR EACH PIN
@@ -647,7 +734,7 @@
             ${categoryBadges}
           </div>
           <div class="popup-main">
-            <img class="popup-thumb" src="${pin.uniquePinUrl}" alt="${pin.name} icon" />
+            ${makePopupGallery(pin)}
             <div class="popup-text">
               <h4>${pin.name}</h4>
               <div class="popup-description">${formatDescription(pin.description)}</div>
@@ -1065,7 +1152,7 @@ description: `
         autoPan: true,
         keepInView: true,
         closeButton: true,
-        maxWidth: 360,
+        maxWidth: 380,
         autoPanPaddingTopLeft: [20, 20],
         autoPanPaddingBottomRight: [20, 20]
       });
