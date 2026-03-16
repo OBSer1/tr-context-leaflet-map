@@ -95,10 +95,13 @@
     }
 
     /* Category colors used in the legend */
-    .legend-resort { background: #b7791f; }
-    .legend-golf { background: #2f855a; }
-    .legend-adventure { background: #2b6cb0; }
-    .legend-realestate { background: #805ad5; }
+    .legend-timberridgeproperties { background: #b7791f; }
+    .legend-communities { background: #b7791f; }
+    .legend-golf { background: #b7791f; }
+    .legend-fishing { background: #2f855a; }
+    .legend-skiing { background: #2b6cb0; }
+    .legend-adventure { background: #805ad5; }
+    .legend-parks { background: #805ad5; }
 
     /* Container styling for popup cards */
     .popup-card {
@@ -119,10 +122,13 @@
     }
 
     /* Category badge colors */
-    .cat-resort { background: #b7791f; }
-    .cat-golf { background: #2f855a; }
-    .cat-adventure { background: #2b6cb0; }
-    .cat-real-estate { background: #805ad5; }
+    .cat-timberridgeproperties { background: #b7791f; }
+    .cat-communities { background: #b7791f; }    
+    .cat-golf { background: #b7791f; }
+    .cat-fishing { background: #2f855a; }
+    .cat-skiing { background: #2b6cb0; }
+    .cat-adventure { background: #805ad5; }
+    .cat-parks { background: #805ad5; }
 
     /* Popup title */
     .popup-card h4 {
@@ -168,10 +174,13 @@
     }
 
     /* Pin colors by category */
-    .pin-resort { background: #b7791f; }
-    .pin-golf { background: #2f855a; }
-    .pin-adventure { background: #2b6cb0; }
-    .pin-real-estate { background: #805ad5; }
+    .pin-timberridgeproperties { background: #b7791f; }
+    .pin-communities { background: #b7791f; }    
+    .pin-golf { background: #b7791f; }
+    .pin-fishing { background: #2f855a; }
+    .pin-skiing { background: #2b6cb0; }
+    .pin-adventure { background: #805ad5; }
+    .pin-parks { background: #805ad5; }
   </style>
 </head>
 
@@ -261,7 +270,7 @@
 
     // LAYER GROUPS (used for filtering categories)
     const categoryLayers = {
-      "Timber Ridge Properties": L.layerGroup().addTo(map),
+      timberridgeproperties: L.layerGroup().addTo(map),
       communities: L.layerGroup().addTo(map),
       golf: L.layerGroup().addTo(map),
       fishing: L.layerGroup().addTo(map),
@@ -277,8 +286,8 @@
       // x/y coordinates are pixel locations on the original map image
 
       {
-        name: "Timber Ridge",
-        category: "Timber Ridge Properties",
+        name: "Timber Ridge Properties",
+        category: "timberridgeproperties",
         categoryLabel: "Timber Ridge Properties",
         x: 3000,
         y: 2000,
@@ -435,9 +444,15 @@
           </label>
 
           <label>
-            <input type="checkbox" class="category-filter" value="resort" checked />
-            <span class="legend-dot legend-resort"></span>
-            <span>Resort</span>
+            <input type="checkbox" class="category-filter" value="timberridgeproperties" checked />
+            <span class="legend-dot legend-timberridgeproperties"></span>
+            <span>Timber Ridge Properties</span>
+          </label>
+
+          <label>
+            <input type="checkbox" class="category-filter" value="communities" checked />
+            <span class="legend-dot legend-communities"></span>
+            <span>Communities</span>
           </label>
 
           <label>
@@ -447,15 +462,27 @@
           </label>
 
           <label>
+            <input type="checkbox" class="category-filter" value="fishing" checked />
+            <span class="legend-dot legend-fishing"></span>
+            <span>Fishing</span>
+          </label>
+          
+           <label>
+            <input type="checkbox" class="category-filter" value="skiing" checked />
+            <span class="legend-dot legend-skiing"></span>
+            <span>Skiing</span>
+          </label>
+
+           <label>
             <input type="checkbox" class="category-filter" value="adventure" checked />
             <span class="legend-dot legend-adventure"></span>
             <span>Adventure</span>
           </label>
 
-          <label>
-            <input type="checkbox" class="category-filter" value="real-estate" checked />
-            <span class="legend-dot legend-realestate"></span>
-            <span>Real Estate</span>
+           <label>
+            <input type="checkbox" class="category-filter" value="parks" checked />
+            <span class="legend-dot legend-parks"></span>
+            <span>Parks</span>
           </label>
         `;
 
