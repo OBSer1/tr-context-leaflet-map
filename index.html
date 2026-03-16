@@ -173,8 +173,7 @@
 
     /* Container styling for popup cards */
     .popup-card {
-      min-width: 300px;
-      max-width: 340px;
+      min-width: 280px;
       line-height: 1.45;
     }
 
@@ -208,19 +207,19 @@
 
     /* New popup content row */
     .popup-main {
-      display: flex;
-      align-items: flex-start;
-      gap: 14px;
-    }
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
 
-    /* Left image in popup */
-    .popup-thumb {
-      width: 88px;
-      height: 120px;
-      flex: 0 0 88px;
-      object-fit: contain;
-      display: block;
-    }
+     /* Left image in popup */
+.popup-thumb {
+  width: 150px;
+  height: 237px;
+  flex: 0 0 150px;
+  object-fit: contain;
+  display: block;
+}
 
     /* Right side text stack */
     .popup-text {
@@ -237,7 +236,7 @@
 
     /* Popup description text */
     .popup-description {
-      margin: 0 0 8px 0;
+      margin: 0 0 6px 0;
       font-size: 13px;
       color: #364233;
     }
@@ -263,7 +262,6 @@
       display: flex;
       flex-direction: column;
       gap: 4px;
-      margin-bottom: 10px;
     }
 
     .popup-url a {
@@ -273,101 +271,6 @@
 
     .popup-url a:hover {
       text-decoration: underline;
-    }
-
-    /* POPUP PHOTO GALLERY */
-    .popup-gallery {
-      margin-top: 8px;
-    }
-
-    .popup-gallery-stage {
-      position: relative;
-      width: 100%;
-      height: 170px;
-      border-radius: 10px;
-      overflow: hidden;
-      background: #f2f4f1;
-      border: 1px solid #dfe5db;
-      margin-bottom: 8px;
-    }
-
-    .popup-gallery-main {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-      user-select: none;
-      -webkit-user-drag: none;
-    }
-
-    .popup-gallery-nav {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 30px;
-      height: 30px;
-      border: none;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.9);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
-      cursor: pointer;
-      font-size: 18px;
-      line-height: 1;
-      color: #23301f;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-      z-index: 2;
-    }
-
-    .popup-gallery-nav:hover {
-      background: #ffffff;
-    }
-
-    .popup-gallery-prev {
-      left: 8px;
-    }
-
-    .popup-gallery-next {
-      right: 8px;
-    }
-
-    .popup-gallery-thumbs {
-      display: flex;
-      gap: 6px;
-      overflow-x: auto;
-      padding-bottom: 2px;
-      scrollbar-width: thin;
-    }
-
-    .popup-gallery-thumbs::-webkit-scrollbar {
-      height: 6px;
-    }
-
-    .popup-gallery-thumbs::-webkit-scrollbar-thumb {
-      background: rgba(0,0,0,0.2);
-      border-radius: 999px;
-    }
-
-    .popup-gallery-thumb {
-      width: 52px;
-      height: 42px;
-      flex: 0 0 52px;
-      object-fit: cover;
-      border-radius: 8px;
-      border: 2px solid transparent;
-      cursor: pointer;
-      background: #edf1eb;
-      transition: border-color 160ms ease, transform 160ms ease;
-    }
-
-    .popup-gallery-thumb:hover {
-      transform: translateY(-1px);
-    }
-
-    .popup-gallery-thumb.active {
-      border-color: #5c7c4f;
     }
 
     /* Wrapper for custom pin icons */
@@ -682,7 +585,7 @@
       return /^https?:\/\//i.test(url) ? url : `https://${url}`;
     }
 
-    // Convert a value into an array of URLs or image URLs
+    // Convert locationexternalURL into a clean array of URLs
     function normalizeUrls(urlValue) {
       if (!urlValue) return [];
 
@@ -699,13 +602,6 @@
       return urls
         .map(url => String(url).trim())
         .filter(url => url.length > 0);
-    }
-
-    function slugify(text) {
-      return String(text || "")
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
     }
 
     // Escape plain text descriptions so HTML descriptions can be supported safely
@@ -731,50 +627,6 @@
       return `<p>${escapeHtml(text)}</p>`;
     }
 
-    function getGalleryImages(pin) {
-      const galleryImages = normalizeUrls(pin.photoGallery);
-      if (galleryImages.length) return galleryImages;
-      return pin.uniquePinUrl ? [pin.uniquePinUrl] : [];
-    }
-
-    function makeGalleryHtml(pin) {
-      const galleryId = `gallery-${slugify(pin.name)}`;
-      const images = getGalleryImages(pin);
-
-      if (!images.length) {
-        return "";
-      }
-
-      const thumbHtml = images.map((src, index) => `
-        <img
-          class="popup-gallery-thumb ${index === 0 ? "active" : ""}"
-          src="${src}"
-          alt="${escapeHtml(pin.name)} thumbnail ${index + 1}"
-          data-gallery-thumb
-          data-index="${index}"
-        />
-      `).join("");
-
-      return `
-        <div class="popup-gallery" data-gallery-id="${galleryId}">
-          <div class="popup-gallery-stage">
-            <button type="button" class="popup-gallery-nav popup-gallery-prev" data-gallery-prev aria-label="Previous image">&#8249;</button>
-            <img
-              class="popup-gallery-main"
-              src="${images[0]}"
-              alt="${escapeHtml(pin.name)} photo 1"
-              data-gallery-main
-            />
-            <button type="button" class="popup-gallery-nav popup-gallery-next" data-gallery-next aria-label="Next image">&#8250;</button>
-          </div>
-          <div class="popup-gallery-thumbs" data-gallery-thumbs>
-            ${thumbHtml}
-          </div>
-          <script type="application/json" class="gallery-data">${JSON.stringify(images)}</script>
-        </div>
-      `;
-    }
-
     // GENERATES POPUP HTML FOR EACH PIN
     function makePopup(pin) {
       const urls = normalizeUrls(pin.locationexternalURL);
@@ -789,15 +641,13 @@
         return `<div class="category cat-${category}">${getCategoryLabel(category)}</div>`;
       }).join("");
 
-      const galleryHtml = makeGalleryHtml(pin);
-
       return `
         <div class="popup-card">
           <div class="popup-categories">
             ${categoryBadges}
           </div>
           <div class="popup-main">
-            <img class="popup-thumb" src="${pin.uniquePinUrl}" alt="${escapeHtml(pin.name)} icon" />
+            <img class="popup-thumb" src="${pin.uniquePinUrl}" alt="${pin.name} icon" />
             <div class="popup-text">
               <h4>${pin.name}</h4>
               <div class="popup-description">${formatDescription(pin.description)}</div>
@@ -806,7 +656,6 @@
               </div>
             </div>
           </div>
-          ${galleryHtml}
         </div>
       `;
     }
@@ -878,10 +727,7 @@
         x: 4005,
         y: 3758,
         description: "Who knew living Wild would be so accessible!",
-        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/tr_icon.png",
-        photoGallery: [
-          "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/tr_icon.png"
-        ]
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/tr_icon.png"
       },
 
       {
@@ -889,7 +735,7 @@
         categories: ["communities", "skiing", "adventure"],
         x: 3365,
         y: 2199,
-        description: `
+       description: `
 <p><strong>Banff</strong> is one of Alberta’s most iconic destinations, famous for its breathtaking Rocky Mountain scenery and world-class outdoor experiences.</p>
 
 <p>Visitors can experience:</p>
@@ -903,10 +749,7 @@
 <p>It is one of the most spectacular mountain destinations in Canada.</p>
 `,
         uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/banff_logo.png",
-        locationexternalURL: ["https://www.banfflakelouise.com", "https://www.skibanff.com"],
-        photoGallery: [
-          "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/banff_logo.png"
-        ]
+        locationexternalURL: ["https://www.banfflakelouise.com", "https://www.skibanff.com"]
       },
 
       {
@@ -914,7 +757,7 @@
         categories: ["communities"],
         x: 5214,
         y: 2335,
-        description: `
+       description: `
 <p><strong>Calgary</strong> is a dynamic western city where modern culture meets cowboy heritage, serving the closest international airport to Timber Ridge Properties.</p>
 
 <p>Visitors can experience:</p>
@@ -929,10 +772,7 @@
 <p>Your hub to the world, culture and shopping.</p>
 `,
         uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Calgary_logo.png",
-        locationexternalURL: "https://www.visitcalgary.com",
-        photoGallery: [
-          "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Calgary_logo.png"
-        ]
+        locationexternalURL: "https://www.visitcalgary.com"
       },
 
       {
@@ -942,7 +782,7 @@
         y: 2013,
         description: `
           <div>
-            <p>Drumheller is a UNESCO world Hertiage site; famous for its dramatic badlands and dinosaur heritage.</p>
+            <p><strong>Drumheller</strong> is a UNESCO world Hertiage site; famous for its dramatic badlands and dinosaur heritage.</p>
             <p>Visitors can experience:</p>
             <ul>
               <li>The world-renowned Royal Tyrrell Museum</li>
@@ -957,9 +797,6 @@
           "https://www.traveldrumheller.com",
           "https://tyrrellmuseum.com",
           "https://www.albertaparks.ca/parks/south/dinosaur-pp/"
-        ],
-        photoGallery: [
-          "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/drumheller_icon.png"
         ]
       },
 
@@ -968,7 +805,7 @@
         categories: ["communities", "skiing", "adventure"],
         x: 536,
         y: 3633,
-        description: `
+       description: `
 <p><strong>Kimberley</strong> is a charming mountain town in the Kootenay Rockies known for its outdoor adventure, alpine scenery, and welcoming small-town atmosphere.</p>
 
 <p>Visitors can experience:</p>
@@ -983,10 +820,7 @@
 <p>With year-round recreation and stunning Rocky Mountain landscapes, Kimberley is a premier destination for outdoor enthusiasts.</p>
 `,
         uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Kimberley_icon.png",
-        locationexternalURL: ["https://www.tourismkimberley.com", "https://www.skikimberley.com"],
-        photoGallery: [
-          "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Kimberley_icon.png"
-        ]
+        locationexternalURL: ["https://www.tourismkimberley.com", "https://www.skikimberley.com"]
       },
 
       {
@@ -1009,10 +843,7 @@
 <p>With relaxing mineral hot springs and endless outdoor adventure, Fairmont is one of the Kootenays’ most beloved getaway destinations.</p>
 `,
         uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/fairmont_icon.png",
-        locationexternalURL: "https://www.travelcolumbiavalley.com/fairmonthotsprings/",
-        photoGallery: [
-          "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/fairmont_icon.png"
-        ]
+        locationexternalURL: "https://www.travelcolumbiavalley.com/fairmonthotsprings/"
       },
 
       {
@@ -1035,10 +866,7 @@
 <p>With year-round adventure and breathtaking alpine landscapes, Fernie is one of British Columbia’s premier mountain destinations.</p>
 `,
         uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Fernie_Icon.png",
-        locationexternalURL: ["https://www.tourismfernie.com", "https://www.skifernie.com", "https://tourismfernie.com/activities/white-water-rafting"],
-        photoGallery: [
-          "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Fernie_Icon.png"
-        ]
+        locationexternalURL: ["https://www.tourismfernie.com", "https://www.skifernie.com", "https://tourismfernie.com/activities/white-water-rafting"]
       },
 
       {
@@ -1061,10 +889,7 @@
 <p>With easy access to mountains, prairie, and parkland, Pincher Creek is a hub for outdoor recreation and southern Alberta exploration.</p>
 `,
         uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Pincher_Icon.png",
-        locationexternalURL: "https://www.pinchercreek.ca",
-        photoGallery: [
-          "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Pincher_Icon.png"
-        ]
+        locationexternalURL: "https://www.pinchercreek.ca"
       },
 
       {
@@ -1087,10 +912,7 @@
 <p>With beautiful river valley parks and rich cultural offerings, Lethbridge is one of southern Alberta’s most distinctive destinations.</p>
 `,
         uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Lethbridge_Icon.png",
-        locationexternalURL: "https://tourismlethbridge.com",
-        photoGallery: [
-          "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Lethbridge_Icon.png"
-        ]
+        locationexternalURL: "https://tourismlethbridge.com"
       },
 
       {
@@ -1113,10 +935,7 @@
 <p>With breathtaking scenery and unforgettable golf, it is one of the premier mountain golf destinations in Western Canada.</p>
 `,
         uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/CNP_Golf_icon.png",
-        locationexternalURL: "https://crowsnestpassgolf.com",
-        photoGallery: [
-          "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/CNP_Golf_icon.png"
-        ]
+        locationexternalURL: "https://crowsnestpassgolf.com"
       },
 
       {
@@ -1124,7 +943,7 @@
         categories: ["skiing", "adventure"],
         x: 4687,
         y: 4467,
-        description: `
+description: `
 <p><strong>Castle Mountain Resort</strong> is a rugged alpine destination in the southern Canadian Rockies, known for its legendary powder, dramatic terrain, and authentic mountain culture.</p>
 
 <p>Visitors can experience:</p>
@@ -1137,12 +956,8 @@
 </ul>
 
 <p>With year-round adventure and breathtaking mountain landscapes, Castle Mountain is one of the Rockies’ most iconic outdoor playgrounds.</p>
-`,
-        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Castle_Ski_Icon.png",
-        locationexternalURL: ["https://www.skicastle.ca", "https://www.sinistersports.ca/sinister7/"],
-        photoGallery: [
-          "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Castle_Ski_Icon.png"
-        ]
+`,        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Castle_Ski_Icon.png",
+        locationexternalURL: ["https://www.skicastle.ca", "https://www.sinistersports.ca/sinister7/"]
       },
 
       {
@@ -1150,7 +965,7 @@
         categories: ["parks", "golf", "adventure"],
         x: 6574,
         y: 5323,
-        description: `
+description: `
 <p><strong>Waterton Lakes National Park</strong> is a spectacular Rocky Mountain destination where prairie, lakes, and towering peaks meet in one of Canada’s most unique landscapes.</p>
 
 <p>Visitors can experience:</p>
@@ -1163,12 +978,8 @@
 </ul>
 
 <p>As part of the Waterton-Glacier International Peace Park, this UNESCO World Heritage Site offers unforgettable scenery and outdoor adventure.</p>
-`,
-        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/waterton_icon.png",
-        locationexternalURL: "https://watertontourism.com",
-        photoGallery: [
-          "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/waterton_icon.png"
-        ]
+`,        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/waterton_icon.png",
+        locationexternalURL: "https://watertontourism.com"
       },
 
       {
@@ -1191,10 +1002,7 @@
 <p>With its striking waterfall and welcoming brewery nearby, Lundbreck Falls is a perfect stop for travelers exploring southwest Alberta.</p>
 `,
         uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/lundbreck_falls_icon.png",
-        locationexternalURL: ["https://www.albertaparks.ca/parks/south/lundbreck-falls-pra/", "https://www.oldmanriverbrewing.com"],
-        photoGallery: [
-          "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/lundbreck_falls_icon.png"
-        ]
+        locationexternalURL: ["https://www.albertaparks.ca/parks/south/lundbreck-falls-pra/", "https://www.oldmanriverbrewing.com"]
       }
     ];
 
@@ -1229,80 +1037,6 @@
       pinSet.categoryMarker.on("mouseout", onLeave);
     }
 
-    function initPopupGallery(galleryEl, popup) {
-      if (!galleryEl || galleryEl.dataset.initialized === "true") return;
-
-      const dataScript = galleryEl.querySelector(".gallery-data");
-      const mainImage = galleryEl.querySelector("[data-gallery-main]");
-      const prevButton = galleryEl.querySelector("[data-gallery-prev]");
-      const nextButton = galleryEl.querySelector("[data-gallery-next]");
-      const thumbEls = Array.from(galleryEl.querySelectorAll("[data-gallery-thumb]"));
-
-      if (!dataScript || !mainImage || !thumbEls.length) return;
-
-      let images = [];
-
-      try {
-        images = JSON.parse(dataScript.textContent || "[]");
-      } catch (error) {
-        images = [];
-      }
-
-      if (!images.length) return;
-
-      let currentIndex = 0;
-
-      function renderGallery(index) {
-        currentIndex = (index + images.length) % images.length;
-        mainImage.src = images[currentIndex];
-        mainImage.alt = `Gallery image ${currentIndex + 1}`;
-
-        thumbEls.forEach((thumb, i) => {
-          thumb.classList.toggle("active", i === currentIndex);
-        });
-
-        if (popup) {
-          setTimeout(function () {
-            keepPopupFullyVisible(popup);
-          }, 20);
-        }
-      }
-
-      prevButton.addEventListener("click", function (event) {
-        event.preventDefault();
-        event.stopPropagation();
-        renderGallery(currentIndex - 1);
-      });
-
-      nextButton.addEventListener("click", function (event) {
-        event.preventDefault();
-        event.stopPropagation();
-        renderGallery(currentIndex + 1);
-      });
-
-      thumbEls.forEach((thumb, index) => {
-        thumb.addEventListener("click", function (event) {
-          event.preventDefault();
-          event.stopPropagation();
-          renderGallery(index);
-        });
-      });
-
-      galleryEl.dataset.initialized = "true";
-      renderGallery(0);
-    }
-
-    function initPopupGalleries(popup) {
-      if (!popup || !popup.getElement) return;
-
-      const popupEl = popup.getElement();
-      if (!popupEl) return;
-
-      popupEl.querySelectorAll(".popup-gallery").forEach(galleryEl => {
-        initPopupGallery(galleryEl, popup);
-      });
-    }
-
     // CREATE MARKERS FROM DATA
     pinData.forEach(pin => {
 
@@ -1331,7 +1065,7 @@
         autoPan: true,
         keepInView: true,
         closeButton: true,
-        maxWidth: 380,
+        maxWidth: 360,
         autoPanPaddingTopLeft: [20, 20],
         autoPanPaddingBottomRight: [20, 20]
       });
@@ -1581,7 +1315,6 @@
     }
 
     map.on("popupopen", function (e) {
-      initPopupGalleries(e.popup);
       keepPopupFullyVisible(e.popup);
     });
 
