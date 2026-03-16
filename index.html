@@ -57,6 +57,11 @@
     /* Allow popup content to size naturally */
     .leaflet-popup-content-wrapper {
       overflow: visible;
+      border-radius: 12px;
+    }
+
+    .leaflet-popup-content {
+      margin: 10px 10px 12px 10px;
     }
 
     /* Make bottom-right controls sit nicely in one row */
@@ -173,26 +178,26 @@
 
     /* Container styling for popup cards */
     .popup-card {
-      min-width: 300px;
-      max-width: 340px;
-      line-height: 1.45;
+      width: min(78vw, 250px);
+      max-width: 250px;
+      line-height: 1.35;
     }
 
     /* Row of category badges at top of popup */
     .popup-categories {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 10px;
+      gap: 5px;
+      margin-bottom: 8px;
     }
 
     /* Category badge */
     .popup-card .category {
       display: inline-block;
-      font-size: 11px;
+      font-size: 10px;
       letter-spacing: 0.04em;
       text-transform: uppercase;
-      padding: 4px 8px;
+      padding: 3px 7px;
       border-radius: 999px;
       color: #fff;
     }
@@ -210,29 +215,29 @@
     .popup-main {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
 
     /* Mosaic gallery */
     .popup-gallery {
       display: grid;
       grid-template-columns: 2fr 1fr;
-      grid-template-rows: 118px 118px;
-      gap: 6px;
+      grid-template-rows: 82px 82px;
+      gap: 5px;
       width: 100%;
-      border-radius: 12px;
+      border-radius: 10px;
       overflow: hidden;
       background: #eef2eb;
     }
 
     .popup-gallery.single-image {
       grid-template-columns: 1fr;
-      grid-template-rows: 240px;
+      grid-template-rows: 150px;
     }
 
     .popup-gallery.two-images {
       grid-template-columns: 1.5fr 1fr;
-      grid-template-rows: 240px;
+      grid-template-rows: 150px;
     }
 
     .popup-gallery-item {
@@ -254,7 +259,9 @@
       width: 100%;
       height: 100%;
       display: block;
-      object-fit: cover;
+      object-fit: contain;
+      object-position: center;
+      background: #eef2eb;
     }
 
     /* Right side text stack */
@@ -265,39 +272,40 @@
 
     /* Popup title */
     .popup-card h4 {
-      margin: 0 0 6px 0;
-      font-size: 16px;
+      margin: 0 0 5px 0;
+      font-size: 14px;
       color: #1f2a1a;
+      line-height: 1.2;
     }
 
     /* Popup description text */
     .popup-description {
       margin: 0 0 6px 0;
-      font-size: 13px;
+      font-size: 12px;
       color: #364233;
     }
 
     .popup-description p {
-      margin: 0 0 8px 0;
+      margin: 0 0 7px 0;
     }
 
     .popup-description ul {
-      margin: 0 0 8px 18px;
+      margin: 0 0 7px 16px;
       padding: 0;
     }
 
     .popup-description li {
-      margin: 0 0 4px 0;
+      margin: 0 0 3px 0;
     }
 
     /* Popup URL block */
     .popup-url {
-      font-size: 12px;
+      font-size: 11px;
       color: #5c7c4f;
       word-break: break-word;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
     }
 
     .popup-url a {
@@ -489,6 +497,52 @@
 
     .github-commit-muted {
       color: #5b6358;
+    }
+
+    /* Mobile popup sizing */
+    @media (max-width: 768px) {
+      .leaflet-popup-content {
+        margin: 8px 8px 10px 8px;
+      }
+
+      .popup-card {
+        width: min(72vw, 220px);
+        max-width: 220px;
+      }
+
+      .popup-gallery {
+        grid-template-rows: 72px 72px;
+        gap: 4px;
+      }
+
+      .popup-gallery.single-image {
+        grid-template-rows: 130px;
+      }
+
+      .popup-gallery.two-images {
+        grid-template-rows: 130px;
+      }
+
+      .popup-card .category {
+        font-size: 9px;
+        padding: 3px 6px;
+      }
+
+      .popup-card h4 {
+        font-size: 13px;
+      }
+
+      .popup-description {
+        font-size: 11px;
+      }
+
+      .popup-url {
+        font-size: 10px;
+      }
+
+      .map-ui {
+        max-width: 230px;
+      }
     }
 
   </style>
@@ -976,10 +1030,7 @@
 <p>With easy access to mountains, prairie, and parkland, Pincher Creek is a hub for outdoor recreation and southern Alberta exploration.</p>
 `,
         uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Pincher_Icon.png",
-        locationexternalURL: "https://www.pinchercreek.ca",
-        popupGalleryImages: [
-  "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Fernie_Icon.png"
-]
+        locationexternalURL: "https://www.pinchercreek.ca"
       },
 
       {
@@ -1155,7 +1206,7 @@ description: `
         autoPan: true,
         keepInView: true,
         closeButton: true,
-        maxWidth: 380,
+        maxWidth: 270,
         autoPanPaddingTopLeft: [20, 20],
         autoPanPaddingBottomRight: [20, 20]
       });
