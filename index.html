@@ -173,6 +173,15 @@
       word-break: break-word;
     }
 
+    .popup-url a {
+      color: #5c7c4f;
+      text-decoration: none;
+    }
+
+    .popup-url a:hover {
+      text-decoration: underline;
+    }
+
     /* Wrapper for custom pin icons */
     .custom-pin-wrap {
       background: transparent;
@@ -183,8 +192,8 @@
     .pin-badge {
       width: 10px;
       height: 10px;
-      border-radius: 50% 50% 50% 50%; /* Creates teardrop pin shape */
-      transform: rotate(-45deg); /* Rotates shape into a pin */
+      border-radius: 50% 50% 50% 50%;
+      transform: rotate(-45deg);
       border: 2px solid white;
       box-shadow: 0 2px 10px rgba(0,0,0,0.28);
       position: relative;
@@ -200,6 +209,7 @@
       position: absolute;
       top: 50%;
       left: 50%;
+      transform: translate(-50%, -50%);
     }
 
     /* Pin colors by category */
@@ -210,6 +220,7 @@
     .pin-skiing { background: #2b6cb0; }
     .pin-adventure { background: #805ad5; }
     .pin-parks { background: #805ad5; }
+
   </style>
 </head>
 
@@ -224,24 +235,21 @@
   <script>
 
     // IMAGE / TILESET SETTINGS
-    // These values must match your MapTiler export settings
-
-    const imageWidth = 9216;   // Width of full map image in pixels
-    const imageHeight = 6144;  // Height of full map image in pixels
-    const minZoom = 0;         // Minimum zoom level allowed
-    const maxZoom = 5;         // Maximum zoom level allowed
-    const tileSize = 512;      // Tile size used by MapTiler
+    const imageWidth = 9216;
+    const imageHeight = 6144;
+    const minZoom = 0;
+    const maxZoom = 5;
+    const tileSize = 512;
 
     // CREATE THE LEAFLET MAP
-
     const map = L.map("map", {
-      crs: L.CRS.Simple, // Uses simple coordinate system (not GPS)
+      crs: L.CRS.Simple,
       minZoom: minZoom,
       maxZoom: maxZoom,
-      zoomSnap: 1, // Snap zoom to integer levels
+      zoomSnap: 1,
       zoomDelta: 1,
       wheelPxPerZoomLevel: 120,
-      maxBoundsViscosity: 1.0 // Prevents panning outside map
+      maxBoundsViscosity: 1.0
     });
 
     // CREATE PANES SO THE UNIQUE PNG PINS SIT BEHIND THE CATEGORY PINS
@@ -255,27 +263,24 @@
     map.getPane("popupPane").style.zIndex = 700;
 
     // DEFINE MAP BOUNDS BASED ON IMAGE SIZE
-
     const southWest = map.unproject([0, imageHeight], maxZoom);
     const northEast = map.unproject([imageWidth, 0], maxZoom);
     const bounds = L.latLngBounds(southWest, northEast);
 
-    // ADD TILE LAYER (MapTiler image tiles)
-
+    // ADD TILE LAYER
     L.tileLayer(
       "https://api.maptiler.com/images/019ce303-6cdb-71ce-8d07-c536682a6388/{z}/{x}/{y}?key=HeGrCVsbkGCIdm3hjmI5",
       {
         tileSize: tileSize,
         minZoom: minZoom,
         maxZoom: maxZoom,
-        noWrap: true, // Prevent tile repetition
+        noWrap: true,
         bounds: bounds,
-        attribution: "" // Remove attribution text if desired
+        attribution: ""
       }
     ).addTo(map);
 
     // LOCK MAP VIEW INSIDE IMAGE
-
     map.setMaxBounds(bounds);
     map.fitBounds(bounds);
     map.panInsideBounds(bounds, { animate: false });
@@ -285,19 +290,50 @@
       return map.unproject([x, y], maxZoom);
     }
 
+    // Nicely formats category names for popup label text
+    function getCategoryLabel(categories) {
+      const labelMap = {
+        timberridgeproperties: "Timber Ridge Properties",
+        communities: "Communities",
+        golf: "Golf",
+        fishing: "Fishing",
+        skiing: "Skiing",
+        adventure: "Adventure",
+        parks: "Parks"
+      };
+
+      return categories.map(cat => labelMap[cat] || cat).join(", ");
+    }
+
+    // Returns first category for styling the visible colored pin and popup badge
+    function getPrimaryCategory(pin) {
+      return pin.primaryCategory || pin.categories[0];
+    }
+
     // GENERATES POPUP HTML FOR EACH PIN
     function makePopup(pin) {
+      const primaryCategory = getPrimaryCategory(pin);
+      const categoryLabel = pin.categoryLabel || getCategoryLabel(pin.categories);
+      const hasUrl = !!pin.locationexternalURL;
+
+      let safeUrl = "";
+      if (hasUrl) {
+        safeUrl = pin.locationexternalURL.startsWith("http://") || pin.locationexternalURL.startsWith("https://")
+          ? pin.locationexternalURL
+          : `https://${pin.locationexternalURL}`;
+      }
+
       return `
         <div class="popup-card">
-          <div class="category cat-${pin.category}">${pin.categoryLabel}</div>
+          <div class="category cat-${primaryCategory}">${categoryLabel}</div>
           <div class="popup-main">
             <img class="popup-thumb" src="${pin.uniquePinUrl}" alt="${pin.name} icon" />
             <div class="popup-text">
               <h4>${pin.name}</h4>
               <p>${pin.description}</p>
               <div class="popup-url">
-                <a href="https://${pin.locationexternalURL}" target="_blank">${pin.locationexternalURL}</a>
-                </div>
+                ${hasUrl ? `<a href="${safeUrl}" target="_blank">${pin.locationexternalURL}</a>` : ``}
+              </div>
             </div>
           </div>
         </div>
@@ -316,34 +352,37 @@
     }
 
     // CREATES A UNIQUE PNG ICON FOR EACH LOCATION
-    // These are placed on the lower pane so they appear behind the category pin
     function makeLocationPngIcon(url) {
       return L.icon({
         iconUrl: url,
-        iconSize: [100,138],      // adjust size to suit your PNGs
-        iconAnchor: [52, 138],    // tweak if needed to line up perfectly
+        iconSize: [100, 138],
+        iconAnchor: [50, 138],
         popupAnchor: [0, -26],
         className: "location-png-icon"
       });
     }
 
-    // LAYER GROUPS (used for filtering categories)
-    const categoryLayers = {
-      timberridgeproperties: L.layerGroup().addTo(map),
-      communities: L.layerGroup().addTo(map),
-      golf: L.layerGroup().addTo(map),
-      fishing: L.layerGroup().addTo(map),
-      skiing: L.layerGroup().addTo(map),
-      adventure: L.layerGroup().addTo(map),
-      parks: L.layerGroup().addTo(map),
-    };
+    // CATEGORY DEFINITIONS FOR UI
+    const categoryDefinitions = [
+      { value: "timberridgeproperties", label: "Timber Ridge Properties", legendClass: "legend-timberridgeproperties" },
+      { value: "communities", label: "Communities", legendClass: "legend-communities" },
+      { value: "golf", label: "Golf", legendClass: "legend-golf" },
+      { value: "fishing", label: "Fishing", legendClass: "legend-fishing" },
+      { value: "skiing", label: "Skiing", legendClass: "legend-skiing" },
+      { value: "adventure", label: "Adventure", legendClass: "legend-adventure" },
+      { value: "parks", label: "Parks", legendClass: "legend-parks" }
+    ];
 
     // DATA FOR ALL MAP PINS
+    // IMPORTANT:
+    // - Use categories: [...] for every pin
+    // - A pin can belong to more than one category
+    // - It will still only be drawn once
     const pinData = [
 
       {
         name: "Timber Ridge Properties",
-        category: "timberridgeproperties",
+        categories: ["timberridgeproperties"],
         categoryLabel: "Timber Ridge Properties",
         x: 4005,
         y: 3758,
@@ -353,17 +392,18 @@
 
       {
         name: "Banff",
-        category: "communities",
-        categoryLabel: "Communities",
+        categories: ["communities", "skiing", "adventure"],
+        categoryLabel: "Communities",, "skiing", "adventure",
         x: 3365,
         y: 2199,
         description: "Proposed resort destination with lodging and amenities.",
-        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/banff_logo.png"
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/banff_logo.png",
+        locationexternalURL: "https://www.banfflakelouise.com"
       },
 
       {
         name: "Calgary",
-        category: "communities",
+        categories: ["communities"],
         categoryLabel: "Communities",
         x: 5214,
         y: 2335,
@@ -373,7 +413,7 @@
       
       {
         name: "Drumheller",
-        category: "communities",
+        categories: ["communities"],
         categoryLabel: "Communities",
         x: 7039,
         y: 2013,
@@ -383,7 +423,7 @@
       
       {
         name: "Kimberley",
-        category: "communities",
+        categories: ["communities"],
         categoryLabel: "Communities",
         x: 536,
         y: 3633,
@@ -393,7 +433,7 @@
 
       {
         name: "Fairmont Hotsprings",
-        category: "communities",
+        categories: ["communities"],
         categoryLabel: "Communities",
         x: 1727,
         y: 3224,
@@ -403,7 +443,7 @@
       
       {
         name: "Fernie",
-        category: "communities",
+        categories: ["communities"],
         categoryLabel: "Communities",
         x: 2959,
         y: 3806,
@@ -413,7 +453,7 @@
       
       {
         name: "Pincher Creek",
-        category: "communities",
+        categories: ["communities"],
         categoryLabel: "Communities",
         x: 6020,
         y: 4062,
@@ -424,7 +464,7 @@
       
       {
         name: "Lethbridge",
-        category: "communities",
+        categories: ["communities"],
         categoryLabel: "Communities",
         x: 8588,
         y: 3750,
@@ -434,7 +474,7 @@
 
       {
         name: "CNP Golf Club",
-        category: "golf",
+        categories: ["golf"],
         categoryLabel: "Golf",
         x: 4427,
         y: 3736,
@@ -444,8 +484,8 @@
 
       {
         name: "Castle Mountain Ski Resort",
-        category: "skiing",
-        categoryLabel: "Skiing",
+        categories: ["skiing", "adventure"],
+        categoryLabel: "Skiing, Adventure",
         x: 4687,
         y: 4467,
         description: "Water access area for fishing, paddling, and day use.",
@@ -454,8 +494,8 @@
 
       {
         name: "Waterton National Park",
-        category: "parks",
-        categoryLabel: "Parks",
+        categories: ["parks", "adventure"],
+        categoryLabel: "Parks, Adventure",
         x: 6574,
         y: 5323,
         description: "Boutique cabin enclave with premium lot positioning.",
@@ -464,8 +504,8 @@
       
       {
         name: "Lundbreck Falls",
-        category: "adventure",
-        categoryLabel: "Adventure",
+        categories: ["adventure", "parks"],
+        categoryLabel: "Adventure, Parks",
         x: 5229,
         y: 3986,
         description: "Boutique cabin enclave with premium lot positioning.",
@@ -474,15 +514,19 @@
     ];
 
     // ARRAY TO STORE ALL PIN SETS
-    // Each entry holds BOTH markers for a location:
-    // - the unique PNG marker behind
-    // - the category pin marker in front
+    // Each location exists once, even if it belongs to multiple categories
     const allPinSets = [];
 
     // CREATE MARKERS FROM DATA
     pinData.forEach(pin => {
 
+      // Safety fallback so older single-category objects still work if needed
+      if (!pin.categories && pin.category) {
+        pin.categories = [pin.category];
+      }
+
       const latlng = pointFromImagePixels(pin.x, pin.y);
+      const primaryCategory = getPrimaryCategory(pin);
 
       // BACK MARKER: unique GitHub PNG
       const pngMarker = L.marker(latlng, {
@@ -494,24 +538,28 @@
 
       // FRONT MARKER: existing category pin
       const categoryMarker = L.marker(latlng, {
-        icon: makeCategoryIcon(pin.category),
+        icon: makeCategoryIcon(primaryCategory),
         title: pin.name,
         pane: "categoryPinPane"
       }).bindPopup(makePopup(pin), {
         pane: "popupPane"
       });
 
+      // Make either marker open the same popup
+      pngMarker.on("click", function () {
+        categoryMarker.openPopup();
+      });
+
       categoryMarker.pinMeta = pin;
       pngMarker.pinMeta = pin;
 
-      pngMarker.addTo(categoryLayers[pin.category]);
-      categoryMarker.addTo(categoryLayers[pin.category]);
+      pngMarker.addTo(map);
+      categoryMarker.addTo(map);
 
       allPinSets.push({
         pin,
         pngMarker,
-        categoryMarker,
-        layer: categoryLayers[pin.category]
+        categoryMarker
       });
     });
 
@@ -529,44 +577,57 @@
 
         const pin = pinSet.pin;
 
-        const matchesCategory = selectedCategories.includes(pin.category);
+        // Multi-category support:
+        // show pin if ANY of its categories are selected
+        const matchesCategory = pin.categories.some(category =>
+          selectedCategories.includes(category)
+        );
+
+        const categorySearchText = (pin.categoryLabel || getCategoryLabel(pin.categories)).toLowerCase();
 
         const matchesSearch =
           pin.name.toLowerCase().includes(searchText) ||
           pin.description.toLowerCase().includes(searchText) ||
-          pin.categoryLabel.toLowerCase().includes(searchText);
+          categorySearchText.includes(searchText);
 
         const shouldShow = matchesCategory && matchesSearch;
 
         if (shouldShow) {
-          if (!pinSet.layer.hasLayer(pinSet.pngMarker)) {
-            pinSet.layer.addLayer(pinSet.pngMarker);
+          if (!map.hasLayer(pinSet.pngMarker)) {
+            pinSet.pngMarker.addTo(map);
           }
-          if (!pinSet.layer.hasLayer(pinSet.categoryMarker)) {
-            pinSet.layer.addLayer(pinSet.categoryMarker);
+          if (!map.hasLayer(pinSet.categoryMarker)) {
+            pinSet.categoryMarker.addTo(map);
           }
         } else {
-          if (pinSet.layer.hasLayer(pinSet.pngMarker)) {
-            pinSet.layer.removeLayer(pinSet.pngMarker);
+          if (map.hasLayer(pinSet.pngMarker)) {
+            map.removeLayer(pinSet.pngMarker);
           }
-          if (pinSet.layer.hasLayer(pinSet.categoryMarker)) {
-            pinSet.layer.removeLayer(pinSet.categoryMarker);
+          if (map.hasLayer(pinSet.categoryMarker)) {
+            map.removeLayer(pinSet.categoryMarker);
           }
         }
       });
     }
 
     // CUSTOM CONTROL PANEL (SEARCH + FILTERS)
-
     const FilterControl = L.Control.extend({
 
       options: {
-        position: "topright" // Position of UI on map
+        position: "topright"
       },
 
       onAdd: function () {
 
         const div = L.DomUtil.create("div", "map-ui");
+
+        const categoryCheckboxHtml = categoryDefinitions.map(cat => `
+          <label>
+            <input type="checkbox" class="category-filter" value="${cat.value}" checked />
+            <span class="legend-dot ${cat.legendClass}"></span>
+            <span>${cat.label}</span>
+          </label>
+        `).join("");
 
         div.innerHTML = `
           <h3>Find & Filter</h3>
@@ -577,47 +638,7 @@
             <span>Show all categories</span>
           </label>
 
-          <label>
-            <input type="checkbox" class="category-filter" value="timberridgeproperties" checked />
-            <span class="legend-dot legend-timberridgeproperties"></span>
-            <span>Timber Ridge Properties</span>
-          </label>
-
-          <label>
-            <input type="checkbox" class="category-filter" value="communities" checked />
-            <span class="legend-dot legend-communities"></span>
-            <span>Communities</span>
-          </label>
-
-          <label>
-            <input type="checkbox" class="category-filter" value="golf" checked />
-            <span class="legend-dot legend-golf"></span>
-            <span>Golf</span>
-          </label>
-
-          <label>
-            <input type="checkbox" class="category-filter" value="fishing" checked />
-            <span class="legend-dot legend-fishing"></span>
-            <span>Fishing</span>
-          </label>
-          
-          <label>
-            <input type="checkbox" class="category-filter" value="skiing" checked />
-            <span class="legend-dot legend-skiing"></span>
-            <span>Skiing</span>
-          </label>
-
-          <label>
-            <input type="checkbox" class="category-filter" value="adventure" checked />
-            <span class="legend-dot legend-adventure"></span>
-            <span>Adventure</span>
-          </label>
-
-          <label>
-            <input type="checkbox" class="category-filter" value="parks" checked />
-            <span class="legend-dot legend-parks"></span>
-            <span>Parks</span>
-          </label>
+          ${categoryCheckboxHtml}
         `;
 
         L.DomEvent.disableClickPropagation(div);
@@ -640,23 +661,17 @@
 
     // TOGGLE ALL CATEGORIES
     toggleAll.addEventListener("change", function () {
-
       categoryCheckboxes.forEach(cb => {
         cb.checked = toggleAll.checked;
       });
-
       applyFilters();
     });
 
     // INDIVIDUAL CATEGORY TOGGLES
     categoryCheckboxes.forEach(cb => {
-
       cb.addEventListener("change", function () {
-
         const allChecked = Array.from(categoryCheckboxes).every(box => box.checked);
-
         toggleAll.checked = allChecked;
-
         applyFilters();
       });
     });
