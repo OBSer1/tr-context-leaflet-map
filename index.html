@@ -104,10 +104,79 @@
     .legend-parks { background: #805ad5; }
 
     /* Container styling for popup cards */
+
     .popup-card {
-      min-width: 220px;
-      line-height: 1.45;
-    }
+  min-width: 320px;
+  max-width: 420px;
+}
+
+.popup-card .category {
+  display:inline-block;
+  font-size:11px;
+  padding:4px 8px;
+  border-radius:999px;
+  margin-bottom:10px;
+  color:#fff;
+  text-transform:uppercase;
+}
+
+.cat-timberridgeproperties{background:#b7791f;}
+.cat-communities{background:#b7791f;}
+.cat-golf{background:#b7791f;}
+.cat-fishing{background:#2f855a;}
+.cat-skiing{background:#2b6cb0;}
+.cat-adventure{background:#805ad5;}
+.cat-parks{background:#805ad5;}
+
+.popup-content-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.popup-image-wrap {
+  flex: 0 0 72px;
+}
+
+.popup-image {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  display: block;
+}
+
+.popup-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.popup-card h4{
+  margin:0 0 6px 0;
+  font-size:16px;
+  line-height:1.2;
+}
+
+.popup-card p{
+  margin:0 0 8px 0;
+  font-size:13px;
+  line-height:1.4;
+}
+
+.popup-url {
+  font-size:12px;
+  line-height:1.3;
+}
+
+.popup-url a {
+  color:#2b6cb0;
+  text-decoration:none;
+  word-break:break-word;
+}
+
+.popup-url a:hover {
+  text-decoration:underline;
+}
+
 
     /* Category badge at top of popup */
     .popup-card .category {
