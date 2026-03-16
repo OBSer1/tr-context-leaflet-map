@@ -2,395 +2,630 @@
 <html lang="en">
 <head>
 
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Timber Ridge Context Map</title>
+  <!-- Character encoding for proper text rendering -->
+  <meta charset="utf-8" />
 
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-/>
+  <!-- Ensures the map scales correctly on mobile devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<style>
+  <!-- Browser tab title -->
+  <title>Timber Ridge Context Map</title>
 
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-}
+  <!-- Leaflet CSS (required for map styling and UI elements like zoom buttons) -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
 
-#map {
-  width: 100%;
-  height: 100vh;
-  background: #132b06;
-}
+  <style>
 
-.leaflet-container {
-  background: #ffffff;
-  font-family: Arial, sans-serif;
-}
+    /* Removes default browser margins and forces full page sizing */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+    }
 
-.map-ui {
-  background: rgba(255,255,255,0.96);
-  border-radius: 12px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.18);
-  padding: 12px;
-  min-width: 220px;
-}
+    /* Main container that holds the map */
+    #map {
+      width: 100%;
+      height: 100vh; /* Full viewport height */
+      background: #132b06; /* Background color shown while map loads */
+    }
 
-.map-ui h3 {
-  margin: 0 0 10px 0;
-  font-size: 15px;
-  color: #1f2a1a;
-}
+    /* Default styling applied to the Leaflet map container */
+    .leaflet-container {
+      background: #ffffff; /* Background behind tiles */
+      font-family: Arial, sans-serif; /* Default font for map UI */
+    }
 
-.map-ui .search-input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 9px 10px;
-  border: 1px solid #cfd7cc;
-  border-radius: 8px;
-  font-size: 14px;
-  margin-bottom: 10px;
-}
+    /* Styling for the floating UI control panel (search + filters) */
+    .map-ui {
+      background: rgba(255, 255, 255, 0.96); /* Slight transparency */
+      border-radius: 12px; /* Rounded corners */
+      box-shadow: 0 6px 20px rgba(0,0,0,0.18); /* Soft shadow */
+      padding: 12px;
+      min-width: 220px;
+    }
 
-.map-ui label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  margin: 7px 0;
-  color: #263123;
-  cursor: pointer;
-}
+    /* Title inside the filter panel */
+    .map-ui h3 {
+      margin: 0 0 10px 0;
+      font-size: 15px;
+      line-height: 1.2;
+      color: #1f2a1a;
+    }
 
-.legend-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
+    /* Search input box styling */
+    .map-ui .search-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 9px 10px;
+      border: 1px solid #cfd7cc;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 10px;
+      outline: none;
+    }
 
-.legend-timberridgeproperties { background:#b7791f;}
-.legend-communities { background:#b7791f;}
-.legend-golf { background:#b7791f;}
-.legend-fishing { background:#2f855a;}
-.legend-skiing { background:#2b6cb0;}
-.legend-adventure { background:#805ad5;}
-.legend-parks { background:#805ad5;}
+    /* Highlight color when search box is active */
+    .map-ui .search-input:focus {
+      border-color: #5c7c4f;
+    }
 
-.popup-card {
-  min-width: 220px;
-}
+    /* Layout for each filter row */
+    .map-ui label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      margin: 7px 0;
+      color: #263123;
+      cursor: pointer;
+    }
 
-.popup-card .category {
-  display:inline-block;
-  font-size:11px;
-  padding:4px 8px;
-  border-radius:999px;
-  margin-bottom:8px;
-  color:#fff;
-  text-transform:uppercase;
-}
+    /* Small colored dot used in the filter legend */
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      flex: 0 0 auto;
+    }
 
-.cat-timberridgeproperties{background:#b7791f;}
-.cat-communities{background:#b7791f;}
-.cat-golf{background:#b7791f;}
-.cat-fishing{background:#2f855a;}
-.cat-skiing{background:#2b6cb0;}
-.cat-adventure{background:#805ad5;}
-.cat-parks{background:#805ad5;}
+    /* Category colors used in the legend */
+    .legend-timberridgeproperties { background: #b7791f; }
+    .legend-communities { background: #b7791f; }
+    .legend-golf { background: #b7791f; }
+    .legend-fishing { background: #2f855a; }
+    .legend-skiing { background: #2b6cb0; }
+    .legend-adventure { background: #805ad5; }
+    .legend-parks { background: #805ad5; }
 
-.popup-card h4{
-  margin:0 0 6px 0;
-  font-size:16px;
-}
+    /* Container styling for popup cards */
+    .popup-card {
+      min-width: 220px;
+      line-height: 1.45;
+    }
 
-.popup-card p{
-  margin:0;
-  font-size:13px;
-}
+    /* Category badge at top of popup */
+    .popup-card .category {
+      display: inline-block;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 4px 8px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+      color: #fff;
+    }
 
-.custom-pin-wrap{
-  background:transparent;
-  border:none;
-}
+    /* Category badge colors */
+    .cat-timberridgeproperties { background: #b7791f; }
+    .cat-communities { background: #b7791f; }    
+    .cat-golf { background: #b7791f; }
+    .cat-fishing { background: #2f855a; }
+    .cat-skiing { background: #2b6cb0; }
+    .cat-adventure { background: #805ad5; }
+    .cat-parks { background: #805ad5; }
 
-.pin-badge{
-  width:10px;
-  height:10px;
-  border-radius:50%;
-  transform:rotate(-45deg);
-  border:2px solid white;
-  box-shadow:0 2px 10px rgba(0,0,0,0.28);
-}
+    /* Popup title */
+    .popup-card h4 {
+      margin: 0 0 6px 0;
+      font-size: 16px;
+      color: #1f2a1a;
+    }
 
-.pin-badge::after{
-  content:"";
-  width:2px;
-  height:2px;
-  background:white;
-  border-radius:50%;
-  position:absolute;
-  top:3px;
-  left:3px;
-}
+    /* Popup description text */
+    .popup-card p {
+      margin: 0;
+      font-size: 13px;
+      color: #364233;
+    }
 
-.pin-timberridgeproperties{background:#b7791f;}
-.pin-communities{background:#b7791f;}
-.pin-golf{background:#b7791f;}
-.pin-fishing{background:#2f855a;}
-.pin-skiing{background:#2b6cb0;}
-.pin-adventure{background:#805ad5;}
-.pin-parks{background:#805ad5;}
+    /* Wrapper for custom pin icons */
+    .custom-pin-wrap {
+      background: transparent;
+      border: none;
+    }
 
-</style>
+    /* Base shape of the custom map pin */
+    .pin-badge {
+      width: 10px;
+      height: 10px;
+      border-radius: 50% 50% 50% 50%; /* Creates teardrop pin shape */
+      transform: rotate(-45deg); /* Rotates shape into a pin */
+      border: 2px solid white;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.28);
+      position: relative;
+    }
+
+    /* White dot in center of pin */
+    .pin-badge::after {
+      content: "";
+      width: 2px;
+      height: 2px;
+      background: white;
+      border-radius: 50%;
+      position: absolute;
+      top: 3px;
+      left: 3px;
+    }
+
+    /* Pin colors by category */
+    .pin-timberridgeproperties { background: #b7791f; }
+    .pin-communities { background: #b7791f; }    
+    .pin-golf { background: #b7791f; }
+    .pin-fishing { background: #2f855a; }
+    .pin-skiing { background: #2b6cb0; }
+    .pin-adventure { background: #805ad5; }
+    .pin-parks { background: #805ad5; }
+  </style>
 </head>
 
 <body>
 
-<div id="map"></div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<script>
-
-/* MAP IMAGE SETTINGS */
-
-const imageWidth = 9216;
-const imageHeight = 6144;
-const minZoom = 0;
-const maxZoom = 5;
-const tileSize = 512;
-
-/* CREATE MAP */
-
-const map = L.map("map",{
-  crs:L.CRS.Simple,
-  minZoom:minZoom,
-  maxZoom:maxZoom,
-  zoomSnap:1,
-  zoomDelta:1,
-  maxBoundsViscosity:1.0
-});
-
-/* PANES */
-
-map.createPane("locationPinPane");
-map.getPane("locationPinPane").style.zIndex=450;
-
-map.createPane("categoryPinPane");
-map.getPane("categoryPinPane").style.zIndex=650;
-
-map.createPane("popupPane");
-map.getPane("popupPane").style.zIndex=700;
-
-/* MAP BOUNDS */
-
-const southWest = map.unproject([0,imageHeight],maxZoom);
-const northEast = map.unproject([imageWidth,0],maxZoom);
-const bounds = L.latLngBounds(southWest,northEast);
-
-/* TILE LAYER */
-
-L.tileLayer(
-"https://api.maptiler.com/images/019ce303-6cdb-71ce-8d07-c536682a6388/{z}/{x}/{y}?key=HeGrCVsbkGCIdm3hjmI5",
-{
-tileSize:tileSize,
-minZoom:minZoom,
-maxZoom:maxZoom,
-noWrap:true,
-bounds:bounds,
-attribution:""
-}).addTo(map);
-
-map.setMaxBounds(bounds);
-map.fitBounds(bounds);
-
-/* UTIL */
-
-function pointFromImagePixels(x,y){
-  return map.unproject([x,y],maxZoom);
-}
-
-function makePopup(pin){
-return`
-<div class="popup-card">
-<div class="category cat-${pin.category}">${pin.categoryLabel}</div>
-<h4>${pin.name}</h4>
-<p>${pin.description}</p>
-</div>
-`;
-}
-
-function makeCategoryIcon(category){
-return L.divIcon({
-className:"custom-pin-wrap",
-html:`<div class="pin-badge pin-${category}"></div>`,
-iconSize:[22,22],
-iconAnchor:[11,22]
-});
-}
-
-function makeLocationPngIcon(url){
-return L.icon({
-iconUrl:url,
-iconSize:[100,138],
-iconAnchor:[50,138]
-});
-}
-
-/* LAYERS */
-
-const categoryLayers={
-timberridgeproperties:L.layerGroup().addTo(map),
-communities:L.layerGroup().addTo(map),
-golf:L.layerGroup().addTo(map),
-fishing:L.layerGroup().addTo(map),
-skiing:L.layerGroup().addTo(map),
-adventure:L.layerGroup().addTo(map),
-parks:L.layerGroup().addTo(map)
-};
-
-/* PIN DATA */
-
-const pinData=[
-
-{
-name:"Timber Ridge Properties",
-category:"timberridgeproperties",
-categoryLabel:"Timber Ridge Properties",
-x:4005,
-y:3758,
-description:"Primary development area and central project location.",
-uniquePinUrl:"https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/tr_icon.png"
-},
-
-{
-name:"Banff",
-category:"communities",
-categoryLabel:"Communities",
-x:3365,
-y:2199,
-description:"Proposed resort destination with lodging and amenities.",
-uniquePinUrl:"https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/banff_logo.png"
-},
-
-{
-name:"Calgary",
-category:"communities",
-categoryLabel:"Communities",
-x:5214,
-y:2335,
-description:"Major nearby city and transportation hub.",
-uniquePinUrl:"https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Calgary_logo.png"
-}
-
-];
-
-/* STORE PIN SETS */
-
-const allPinSets=[];
-
-/* CREATE MARKERS */
-
-pinData.forEach(pin=>{
-
-const latlng = pointFromImagePixels(pin.x,pin.y);
-const popupHtml = makePopup(pin);
-
-/* PNG MARKER */
-
-const pngMarker = L.marker(latlng,{
-icon:makeLocationPngIcon(pin.uniquePinUrl),
-pane:"locationPinPane"
-});
-
-/* CATEGORY MARKER */
-
-const categoryMarker = L.marker(latlng,{
-icon:makeCategoryIcon(pin.category),
-pane:"categoryPinPane"
-});
-
-/* SINGLE SHARED POPUP */
-
-function openPopup(){
-
-L.popup({
-pane:"popupPane",
-offset:[0,-40]
-})
-.setLatLng(latlng)
-.setContent(popupHtml)
-.openOn(map);
-
-}
-
-/* CLICK EITHER */
-
-pngMarker.on("click",openPopup);
-categoryMarker.on("click",openPopup);
-
-pngMarker.addTo(categoryLayers[pin.category]);
-categoryMarker.addTo(categoryLayers[pin.category]);
-
-allPinSets.push({
-pin,
-pngMarker,
-categoryMarker,
-layer:categoryLayers[pin.category]
-});
-
-});
-
-/* FILTER FUNCTION */
-
-function applyFilters(){
-
-const searchText = document.getElementById("pin-search").value.trim().toLowerCase();
-
-const selectedCategories=[];
-document.querySelectorAll(".category-filter").forEach(cb=>{
-if(cb.checked)selectedCategories.push(cb.value);
-});
-
-allPinSets.forEach(pinSet=>{
-
-const pin = pinSet.pin;
-
-const matchesCategory = selectedCategories.includes(pin.category);
-
-const matchesSearch =
-pin.name.toLowerCase().includes(searchText) ||
-pin.description.toLowerCase().includes(searchText) ||
-pin.categoryLabel.toLowerCase().includes(searchText);
-
-const shouldShow = matchesCategory && matchesSearch;
-
-if(shouldShow){
-
-if(!pinSet.layer.hasLayer(pinSet.pngMarker))
-pinSet.layer.addLayer(pinSet.pngMarker);
-
-if(!pinSet.layer.hasLayer(pinSet.categoryMarker))
-pinSet.layer.addLayer(pinSet.categoryMarker);
-
-}else{
-
-if(pinSet.layer.hasLayer(pinSet.pngMarker))
-pinSet.layer.removeLayer(pinSet.pngMarker);
-
-if(pinSet.layer.hasLayer(pinSet.categoryMarker))
-pinSet.layer.removeLayer(pinSet.categoryMarker);
-
-}
-
-});
-
-}
-
-</script>
-
+  <!-- Main container where Leaflet renders the map -->
+  <div id="map"></div>
+
+  <!-- Leaflet JavaScript library -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+
+    // IMAGE / TILESET SETTINGS
+    // These values must match your MapTiler export settings
+
+    const imageWidth = 9216;   // Width of full map image in pixels
+    const imageHeight = 6144;  // Height of full map image in pixels
+    const minZoom = 0;         // Minimum zoom level allowed
+    const maxZoom = 5;         // Maximum zoom level allowed
+    const tileSize = 512;      // Tile size used by MapTiler
+
+    // CREATE THE LEAFLET MAP
+
+    const map = L.map("map", {
+      crs: L.CRS.Simple, // Uses simple coordinate system (not GPS)
+      minZoom: minZoom,
+      maxZoom: maxZoom,
+      zoomSnap: 1, // Snap zoom to integer levels
+      zoomDelta: 1,
+      wheelPxPerZoomLevel: 120,
+      maxBoundsViscosity: 1.0 // Prevents panning outside map
+    });
+
+    // CREATE PANES SO THE UNIQUE PNG PINS SIT BEHIND THE CATEGORY PINS
+    map.createPane("locationPinPane");
+    map.getPane("locationPinPane").style.zIndex = 450;
+
+    map.createPane("categoryPinPane");
+    map.getPane("categoryPinPane").style.zIndex = 650;
+
+    map.createPane("popupPane");
+    map.getPane("popupPane").style.zIndex = 700;
+
+    // DEFINE MAP BOUNDS BASED ON IMAGE SIZE
+
+    const southWest = map.unproject([0, imageHeight], maxZoom);
+    const northEast = map.unproject([imageWidth, 0], maxZoom);
+    const bounds = L.latLngBounds(southWest, northEast);
+
+    // ADD TILE LAYER (MapTiler image tiles)
+
+    L.tileLayer(
+      "https://api.maptiler.com/images/019ce303-6cdb-71ce-8d07-c536682a6388/{z}/{x}/{y}?key=HeGrCVsbkGCIdm3hjmI5",
+      {
+        tileSize: tileSize,
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        noWrap: true, // Prevent tile repetition
+        bounds: bounds,
+        attribution: "" // Remove attribution text if desired
+      }
+    ).addTo(map);
+
+    // LOCK MAP VIEW INSIDE IMAGE
+
+    map.setMaxBounds(bounds);
+    map.fitBounds(bounds);
+    map.panInsideBounds(bounds, { animate: false });
+
+    // Converts pixel coordinates into Leaflet coordinates
+    function pointFromImagePixels(x, y) {
+      return map.unproject([x, y], maxZoom);
+    }
+
+    // GENERATES POPUP HTML FOR EACH PIN
+    function makePopup(pin) {
+      return `
+        <div class="popup-card">
+          <div class="category cat-${pin.category}">${pin.categoryLabel}</div>
+          <h4>${pin.name}</h4>
+          <p>${pin.description}</p>
+        </div>
+      `;
+    }
+
+    // CREATES A CUSTOM COLORED PIN ICON
+    function makeCategoryIcon(category) {
+      return L.divIcon({
+        className: "custom-pin-wrap",
+        html: `<div class="pin-badge pin-${category}"></div>`,
+        iconSize: [22, 22],
+        iconAnchor: [11, 22],
+        popupAnchor: [0, -18]
+      });
+    }
+
+    // CREATES A UNIQUE PNG ICON FOR EACH LOCATION
+    // These are placed on the lower pane so they appear behind the category pin
+    function makeLocationPngIcon(url) {
+      return L.icon({
+        iconUrl: url,
+        iconSize: [100,138],      // adjust size to suit your PNGs
+        iconAnchor: [50, 138],    // tweak if needed to line up perfectly
+        popupAnchor: [0, -26],
+        className: "location-png-icon"
+      });
+    }
+
+    // LAYER GROUPS (used for filtering categories)
+    const categoryLayers = {
+      timberridgeproperties: L.layerGroup().addTo(map),
+      communities: L.layerGroup().addTo(map),
+      golf: L.layerGroup().addTo(map),
+      fishing: L.layerGroup().addTo(map),
+      skiing: L.layerGroup().addTo(map),
+      adventure: L.layerGroup().addTo(map),
+      parks: L.layerGroup().addTo(map),
+    };
+
+    // DATA FOR ALL MAP PINS
+    const pinData = [
+
+      {
+        name: "Timber Ridge Properties",
+        category: "timberridgeproperties",
+        categoryLabel: "Timber Ridge Properties",
+        x: 4005,
+        y: 3758,
+        description: "Primary development area and central project location.",
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/tr_icon.png"
+      },
+
+      {
+        name: "Banff",
+        category: "communities",
+        categoryLabel: "Communities",
+        x: 3365,
+        y: 2199,
+        description: "Proposed resort destination with lodging and amenities.",
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/banff_logo.png"
+      },
+
+      {
+        name: "Calgary",
+        category: "communities",
+        categoryLabel: "Communities",
+        x: 5214,
+        y: 2335,
+        description: "Proposed resort destination with lodging and amenities.",
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Calgary_logo.png"
+      },
+      
+      {
+        name: "Drumheller",
+        category: "communities",
+        categoryLabel: "Communities",
+        x: 7039,
+        y: 2013,
+        description: "Proposed resort destination with lodging and amenities.",
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/drumheller_icon.png"
+      },
+      
+      {
+        name: "Kimberley",
+        category: "communities",
+        categoryLabel: "Communities",
+        x: 536,
+        y: 3633,
+        description: "Proposed resort destination with lodging and amenities.",
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Kimberley_icon.png"
+      },
+
+      {
+        name: "Fairmont Hotsprings",
+        category: "communities",
+        categoryLabel: "Communities",
+        x: 1727,
+        y: 3224,
+        description: "Proposed resort destination with lodging and amenities.",
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/fairmont_icon.png"
+      },
+      
+      {
+        name: "Fernie",
+        category: "communities",
+        categoryLabel: "Communities",
+        x: 2959,
+        y: 3806,
+        description: "Proposed resort destination with lodging and amenities.",
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Fernie_Icon.png"
+      },
+      
+      {
+        name: "Pincher Creek",
+        category: "communities",
+        categoryLabel: "Communities",
+        x: 6020,
+        y: 4062,
+        description: "Proposed resort destination with lodging and amenities.",
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Pincher_Icon.png"
+      },
+      
+      {
+        name: "Lethbridge",
+        category: "communities",
+        categoryLabel: "Communities",
+        x: 8588,
+        y: 3750,
+        description: "Proposed resort destination with lodging and amenities.",
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Lethbridge_Icon.png"
+      },
+
+      {
+        name: "CNP Golf Club",
+        category: "golf",
+        categoryLabel: "Golf",
+        x: 4427,
+        y: 3736,
+        description: "Future championship golf course with mountain views.",
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/CNP_Golf_icon.png"
+      },
+
+      {
+        name: "Castle Mountain Ski Resort",
+        category: "skiing",
+        categoryLabel: "Skiing",
+        x: 4687,
+        y: 4467,
+        description: "Water access area for fishing, paddling, and day use.",
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Castle_Ski_Icon.png"
+      },
+
+      {
+        name: "Waterton National Park",
+        category: "parks",
+        categoryLabel: "Parks",
+        x: 6574,
+        y: 5323,
+        description: "Boutique cabin enclave with premium lot positioning.",
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/waterton_icon.png"
+      },
+      
+      {
+        name: "Lundbreck Falls",
+        category: "adventure",
+        categoryLabel: "Adventure",
+        x: 5229,
+        y: 3986,
+        description: "Boutique cabin enclave with premium lot positioning.",
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/lundbreck_falls_icon.png"
+      }
+    ];
+
+    // ARRAY TO STORE ALL PIN SETS
+    // Each entry holds BOTH markers for a location:
+    // - the unique PNG marker behind
+    // - the category pin marker in front
+    const allPinSets = [];
+
+    // CREATE MARKERS FROM DATA
+    pinData.forEach(pin => {
+
+      const latlng = pointFromImagePixels(pin.x, pin.y);
+
+      // BACK MARKER: unique GitHub PNG
+      const pngMarker = L.marker(latlng, {
+        icon: makeLocationPngIcon(pin.uniquePinUrl),
+        title: pin.name,
+        pane: "locationPinPane",
+        keyboard: false
+      });
+
+      // FRONT MARKER: existing category pin
+      const categoryMarker = L.marker(latlng, {
+        icon: makeCategoryIcon(pin.category),
+        title: pin.name,
+        pane: "categoryPinPane"
+      }).bindPopup(makePopup(pin), {
+        pane: "popupPane"
+      });
+
+      categoryMarker.pinMeta = pin;
+      pngMarker.pinMeta = pin;
+
+      pngMarker.addTo(categoryLayers[pin.category]);
+      categoryMarker.addTo(categoryLayers[pin.category]);
+
+      allPinSets.push({
+        pin,
+        pngMarker,
+        categoryMarker,
+        layer: categoryLayers[pin.category]
+      });
+    });
+
+    // FILTER FUNCTION (search + category checkboxes)
+    function applyFilters() {
+
+      const searchText = document.getElementById("pin-search").value.trim().toLowerCase();
+
+      const selectedCategories = [];
+      document.querySelectorAll(".category-filter").forEach(cb => {
+        if (cb.checked) selectedCategories.push(cb.value);
+      });
+
+      allPinSets.forEach(pinSet => {
+
+        const pin = pinSet.pin;
+
+        const matchesCategory = selectedCategories.includes(pin.category);
+
+        const matchesSearch =
+          pin.name.toLowerCase().includes(searchText) ||
+          pin.description.toLowerCase().includes(searchText) ||
+          pin.categoryLabel.toLowerCase().includes(searchText);
+
+        const shouldShow = matchesCategory && matchesSearch;
+
+        if (shouldShow) {
+          if (!pinSet.layer.hasLayer(pinSet.pngMarker)) {
+            pinSet.layer.addLayer(pinSet.pngMarker);
+          }
+          if (!pinSet.layer.hasLayer(pinSet.categoryMarker)) {
+            pinSet.layer.addLayer(pinSet.categoryMarker);
+          }
+        } else {
+          if (pinSet.layer.hasLayer(pinSet.pngMarker)) {
+            pinSet.layer.removeLayer(pinSet.pngMarker);
+          }
+          if (pinSet.layer.hasLayer(pinSet.categoryMarker)) {
+            pinSet.layer.removeLayer(pinSet.categoryMarker);
+          }
+        }
+      });
+    }
+
+    // CUSTOM CONTROL PANEL (SEARCH + FILTERS)
+
+    const FilterControl = L.Control.extend({
+
+      options: {
+        position: "topright" // Position of UI on map
+      },
+
+      onAdd: function () {
+
+        const div = L.DomUtil.create("div", "map-ui");
+
+        div.innerHTML = `
+          <h3>Find & Filter</h3>
+          <input id="pin-search" class="search-input" type="text" placeholder="Search pins..." />
+
+          <label>
+            <input type="checkbox" class="toggle-all" checked />
+            <span>Show all categories</span>
+          </label>
+
+          <label>
+            <input type="checkbox" class="category-filter" value="timberridgeproperties" checked />
+            <span class="legend-dot legend-timberridgeproperties"></span>
+            <span>Timber Ridge Properties</span>
+          </label>
+
+          <label>
+            <input type="checkbox" class="category-filter" value="communities" checked />
+            <span class="legend-dot legend-communities"></span>
+            <span>Communities</span>
+          </label>
+
+          <label>
+            <input type="checkbox" class="category-filter" value="golf" checked />
+            <span class="legend-dot legend-golf"></span>
+            <span>Golf</span>
+          </label>
+
+          <label>
+            <input type="checkbox" class="category-filter" value="fishing" checked />
+            <span class="legend-dot legend-fishing"></span>
+            <span>Fishing</span>
+          </label>
+          
+          <label>
+            <input type="checkbox" class="category-filter" value="skiing" checked />
+            <span class="legend-dot legend-skiing"></span>
+            <span>Skiing</span>
+          </label>
+
+          <label>
+            <input type="checkbox" class="category-filter" value="adventure" checked />
+            <span class="legend-dot legend-adventure"></span>
+            <span>Adventure</span>
+          </label>
+
+          <label>
+            <input type="checkbox" class="category-filter" value="parks" checked />
+            <span class="legend-dot legend-parks"></span>
+            <span>Parks</span>
+          </label>
+        `;
+
+        L.DomEvent.disableClickPropagation(div);
+        L.DomEvent.disableScrollPropagation(div);
+
+        return div;
+      }
+    });
+
+    // ADD FILTER PANEL TO MAP
+    map.addControl(new FilterControl());
+
+    // GET UI ELEMENTS
+    const searchInput = document.getElementById("pin-search");
+    const toggleAll = document.querySelector(".toggle-all");
+    const categoryCheckboxes = document.querySelectorAll(".category-filter");
+
+    // SEARCH INPUT EVENT
+    searchInput.addEventListener("input", applyFilters);
+
+    // TOGGLE ALL CATEGORIES
+    toggleAll.addEventListener("change", function () {
+
+      categoryCheckboxes.forEach(cb => {
+        cb.checked = toggleAll.checked;
+      });
+
+      applyFilters();
+    });
+
+    // INDIVIDUAL CATEGORY TOGGLES
+    categoryCheckboxes.forEach(cb => {
+
+      cb.addEventListener("change", function () {
+
+        const allChecked = Array.from(categoryCheckboxes).every(box => box.checked);
+
+        toggleAll.checked = allChecked;
+
+        applyFilters();
+      });
+    });
+
+    // INITIALIZE FILTER STATE
+    applyFilters();
+
+  </script>
 </body>
 </html>
