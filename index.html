@@ -40,6 +40,25 @@
       font-family: Arial, sans-serif;
     }
 
+    /* Keep map controls below popups */
+    .leaflet-control {
+      z-index: 600 !important;
+    }
+
+    /* Ensure popups appear above controls and markers */
+    .leaflet-popup-pane {
+      z-index: 1000 !important;
+    }
+
+    .leaflet-popup {
+      z-index: 1000 !important;
+    }
+
+    /* Allow popup content to size naturally */
+    .leaflet-popup-content-wrapper {
+      overflow: visible;
+    }
+
     /* Styling for the floating UI control panel (search + filters) */
     .map-ui {
       background: rgba(255, 255, 255, 0.96);
@@ -47,14 +66,55 @@
       box-shadow: 0 6px 20px rgba(0,0,0,0.18);
       padding: 12px;
       min-width: 220px;
+      max-width: 260px;
+    }
+
+    /* Header row for collapsible panel */
+    .map-ui-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
     }
 
     /* Title inside the filter panel */
     .map-ui h3 {
-      margin: 0 0 10px 0;
+      margin: 0;
       font-size: 15px;
       line-height: 1.2;
       color: #1f2a1a;
+    }
+
+    /* Collapse / expand button */
+    .panel-toggle-btn {
+      border: 1px solid #cfd7cc;
+      background: #ffffff;
+      color: #263123;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 13px;
+      cursor: pointer;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+
+    .panel-toggle-btn:hover {
+      background: #f5f7f4;
+    }
+
+    /* Panel body that can be hidden */
+    .map-ui-body {
+      display: block;
+    }
+
+    .map-ui.collapsed .map-ui-body {
+      display: none;
+    }
+
+    .map-ui.collapsed {
+      min-width: auto;
+      padding-bottom: 12px;
     }
 
     /* Search input box styling */
@@ -265,7 +325,7 @@
     map.getPane("categoryPinPane").style.zIndex = 650;
 
     map.createPane("popupPane");
-    map.getPane("popupPane").style.zIndex = 700;
+    map.getPane("popupPane").style.zIndex = 1000;
 
     // DEFINE MAP BOUNDS
     const southWest = map.unproject([0, imageHeight], maxZoom);
@@ -380,8 +440,6 @@
     }
 
     // CREATES A CATEGORY PIN ICON
-    // Single-category = normal solid color
-    // Multi-category = split color using conic-gradient
     function makeCategoryIcon(categories) {
       const uniqueCategories = [...new Set(categories)];
 
@@ -575,13 +633,19 @@
         keyboard: false
       });
 
-      // FRONT MARKER: category pin, now split if multi-category
+      // FRONT MARKER: category pin
       const categoryMarker = L.marker(latlng, {
         icon: makeCategoryIcon(pin.categories),
         title: pin.name,
         pane: "categoryPinPane"
       }).bindPopup(makePopup(pin), {
-        pane: "popupPane"
+        pane: "popupPane",
+        autoPan: true,
+        keepInView: true,
+        closeButton: true,
+        autoPanPaddingTopLeft: [20, 20],
+        autoPanPaddingBottomRight: [20, 20],
+        maxWidth: 360
       });
 
       // Make either marker open the same popup
@@ -650,6 +714,47 @@
       });
     }
 
+    // Measure current control padding so popups don't get hidden by the filter panel
+    function getPopupPadding() {
+      const panel = document.querySelector(".map-ui");
+      const isCollapsed = panel && panel.classList.contains("collapsed");
+
+      let topRightX = 20;
+      let topRightY = 20;
+
+      if (panel && !isCollapsed) {
+        topRightX = panel.offsetWidth + 40;
+        topRightY = panel.offsetHeight + 30;
+      } else if (panel && isCollapsed) {
+        topRightX = panel.offsetWidth + 20;
+        topRightY = panel.offsetHeight + 20;
+      }
+
+      return {
+        topLeft: [20, 20],
+        bottomRight: [20, 20],
+        topRightX,
+        topRightY
+      };
+    }
+
+    // Re-pan popup after opening so it stays fully visible
+    map.on("popupopen", function (e) {
+      const popup = e.popup;
+      const padding = getPopupPadding();
+
+      popup.options.autoPanPaddingTopLeft = padding.topLeft;
+      popup.options.autoPanPaddingBottomRight = [padding.topRightX, 20];
+
+      setTimeout(function () {
+        map.panInside(popup.getLatLng(), {
+          paddingTopLeft: padding.topLeft,
+          paddingBottomRight: [padding.topRightX, 20],
+          animate: true
+        });
+      }, 10);
+    });
+
     // CUSTOM CONTROL PANEL
     const FilterControl = L.Control.extend({
 
@@ -670,15 +775,21 @@
         `).join("");
 
         div.innerHTML = `
-          <h3>Find & Filter</h3>
-          <input id="pin-search" class="search-input" type="text" placeholder="Search pins..." />
+          <div class="map-ui-header">
+            <h3>Find & Filter</h3>
+            <button type="button" class="panel-toggle-btn" id="panel-toggle-btn" aria-label="Hide panel">Hide</button>
+          </div>
 
-          <label>
-            <input type="checkbox" class="toggle-all" checked />
-            <span>Show all categories</span>
-          </label>
+          <div class="map-ui-body">
+            <input id="pin-search" class="search-input" type="text" placeholder="Search pins..." />
 
-          ${categoryCheckboxHtml}
+            <label>
+              <input type="checkbox" class="toggle-all" checked />
+              <span>Show all categories</span>
+            </label>
+
+            ${categoryCheckboxHtml}
+          </div>
         `;
 
         L.DomEvent.disableClickPropagation(div);
@@ -692,9 +803,37 @@
     map.addControl(new FilterControl());
 
     // GET UI ELEMENTS
+    const mapUi = document.querySelector(".map-ui");
     const searchInput = document.getElementById("pin-search");
     const toggleAll = document.querySelector(".toggle-all");
     const categoryCheckboxes = document.querySelectorAll(".category-filter");
+    const panelToggleButton = document.getElementById("panel-toggle-btn");
+
+    // COLLAPSE / EXPAND PANEL
+    panelToggleButton.addEventListener("click", function () {
+      mapUi.classList.toggle("collapsed");
+
+      if (mapUi.classList.contains("collapsed")) {
+        panelToggleButton.textContent = "Show";
+        panelToggleButton.setAttribute("aria-label", "Show panel");
+      } else {
+        panelToggleButton.textContent = "Hide";
+        panelToggleButton.setAttribute("aria-label", "Hide panel");
+      }
+
+      // If a popup is open, re-pan it after panel size changes
+      const openPopup = map._popup;
+      if (openPopup) {
+        setTimeout(function () {
+          const padding = getPopupPadding();
+          map.panInside(openPopup.getLatLng(), {
+            paddingTopLeft: padding.topLeft,
+            paddingBottomRight: [padding.topRightX, 20],
+            animate: true
+          });
+        }, 10);
+      }
+    });
 
     // SEARCH INPUT EVENT
     searchInput.addEventListener("input", applyFilters);
