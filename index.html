@@ -261,6 +261,7 @@
 
     // LAYER GROUPS (used for filtering categories)
     const categoryLayers = {
+      "Timber Ridge Properties": L.layerGroup().addTo(map),
       communities: L.layerGroup().addTo(map),
       golf: L.layerGroup().addTo(map),
       fishing: L.layerGroup().addTo(map),
@@ -277,24 +278,24 @@
 
       {
         name: "Timber Ridge",
-        category: "real-estate",
-        categoryLabel: "Real Estate",
+        category: "Timber Ridge Properties",
+        categoryLabel: "Timber Ridge Properties",
         x: 3000,
         y: 2000,
         description: "Primary development area and central project location."
       },
 
       {
-        name: "Summit Lodge",
-        category: "resort",
-        categoryLabel: "Resort",
+        name: "Pincher Creek",
+        category: "communities",
+        categoryLabel: "Communities",
         x: 4300,
         y: 1750,
         description: "Proposed resort destination with lodging and amenities."
       },
 
       {
-        name: "Alpine Golf Club",
+        name: "CNP Golf Club",
         category: "golf",
         categoryLabel: "Golf",
         x: 5100,
@@ -303,36 +304,54 @@
       },
 
       {
-        name: "North Trailhead",
-        category: "adventure",
-        categoryLabel: "Adventure",
+        name: "Fernie",
+        category: "communities",
+        categoryLabel: "Communities",
         x: 2300,
         y: 3450,
         description: "Main access point for hiking, biking, and lookout routes."
       },
 
       {
-        name: "River Landing",
-        category: "adventure",
-        categoryLabel: "Adventure",
+        name: "Castle Mountain Ski Resort",
+        category: "skiing",
+        categoryLabel: "Skiing",
         x: 6200,
         y: 3920,
         description: "Water access area for fishing, paddling, and day use."
       },
 
       {
-        name: "Cabin Ridge",
-        category: "real-estate",
-        categoryLabel: "Real Estate",
+        name: "Lethbridge",
+        category: "communities",
+        categoryLabel: "Communities",
         x: 3650,
         y: 2500,
         description: "Boutique cabin enclave with premium lot positioning."
       },
 
+         {
+        name: "Waterton National Park",
+        category: "parks",
+        categoryLabel: "Parks",
+        x: 3650,
+        y: 2500,
+        description: "Boutique cabin enclave with premium lot positioning."
+      },
+      
+         {
+        name: "Lundbreck Falls",
+        category: "adventure",
+        categoryLabel: "Adventure",
+        x: 3650,
+        y: 2500,
+        description: "Boutique cabin enclave with premium lot positioning."
+      },
+      
       {
-        name: "West Fairway",
-        category: "golf",
-        categoryLabel: "Golf",
+        name: "Crowsnest River",
+        category: "fishing",
+        categoryLabel: "Fishing",
         x: 5550,
         y: 2950,
         description: "Clubhouse and fairway district."
