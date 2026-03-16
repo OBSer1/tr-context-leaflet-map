@@ -676,15 +676,38 @@
         locationexternalURL: "https://www.visitcalgary.com"
       },
 
-      {
-        name: "Drumheller",
-        categories: ["communities", "parks", "adventure"],
-        x: 7039,
-        y: 2013,
-        description: "Proposed resort destination with lodging and amenities.",
-        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/drumheller_icon.png",
-        locationexternalURL: "https://www.traveldrumheller.com"
-      },
+     {
+  name: "Drumheller",
+  categories: ["communities", "parks", "adventure"],
+  x: 7039,
+  y: 2013,
+
+  description: `
+    <div class="popup-description">
+
+      <p>Drumheller is one of Alberta’s most iconic destinations, famous for its dramatic badlands landscape and dinosaur heritage.</p>
+
+      <p>Visitors can experience:</p>
+
+      <ul>
+        <li>The world-renowned Royal Tyrrell Museum</li>
+        <li>The hoodoos and badlands hiking trails</li>
+        <li>Historic coal mining and prairie culture</li>
+      </ul>
+
+      <p>It is one of the most unique landscapes in Canada.</p>
+
+    </div>
+  `,
+
+  uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/drumheller_icon.png",
+
+  locationexternalURL: [
+    "https://www.traveldrumheller.com",
+    "https://tyrrellmuseum.com",
+    "https://www.albertaparks.ca/parks/south/dinosaur-pp/"
+  ]
+},
 
       {
         name: "Kimberley",
@@ -753,7 +776,7 @@
         y: 4467,
         description: "Water access area for fishing, paddling, and day use.",
         uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Castle_Ski_Icon.png",
-        locationexternalURL: "https://www.skicastle.ca"
+        locationexternalURL: ["https://www.skicastle.ca", "https://www.sinistersports.ca/sinister7/"]
       },
 
       {
@@ -773,7 +796,7 @@
         y: 3986,
         description: "Boutique cabin enclave with premium lot positioning.",
         uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/lundbreck_falls_icon.png",
-        locationexternalURL: "https://www.albertaparks.ca/parks/south/lundbreck-falls-pra/"
+        locationexternalURL: ["https://www.albertaparks.ca/parks/south/lundbreck-falls-pra/", "https://www.oldmanriverbrewing.com"]
       }
     ];
 
