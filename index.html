@@ -57,16 +57,14 @@
       pointer-events: auto;
     }
 
-    /* Make popup stay visually contained and scroll when too tall */
+    /* Popup wrapper and content */
     .leaflet-popup-content-wrapper {
       overflow: hidden;
       border-radius: 12px;
-      max-height: min(72vh, 460px);
     }
 
     .leaflet-popup-content {
       margin: 10px 10px 12px 10px;
-      max-height: calc(min(72vh, 460px) - 24px);
       overflow-y: auto;
       overflow-x: hidden;
       box-sizing: border-box;
@@ -587,13 +585,8 @@
 
     /* Mobile popup sizing */
     @media (max-width: 768px) {
-      .leaflet-popup-content-wrapper {
-        max-height: min(76vh, 380px);
-      }
-
       .leaflet-popup-content {
         margin: 8px 8px 10px 8px;
-        max-height: calc(min(76vh, 380px) - 20px);
       }
 
       .popup-card {
@@ -1419,12 +1412,10 @@
         pane: "categoryPinPane"
       }).bindPopup(makePopup(pin), {
         pane: "popupPane",
-        autoPan: true,
-        keepInView: true,
+        autoPan: false,
+        keepInView: false,
         closeButton: true,
-        maxWidth: 290,
-        autoPanPaddingTopLeft: [20, 20],
-        autoPanPaddingBottomRight: [20, 20]
+        maxWidth: 290
       });
 
       // Make either marker open the same popup
@@ -1644,26 +1635,96 @@
       };
     }
 
-    // Recursion-safe popup visibility handler:
-    // only update popup padding and refresh layout, never manually panBy().
+    let popupPanLock = false;
+
     function keepPopupFullyVisible(popup) {
-      if (!popup || !popup._map) return;
+      if (!popup || !popup._map || !popup._container) return;
+      if (popupPanLock) return;
 
       const padding = getVisibleMapPadding();
+      const mapEl = map.getContainer();
+      const mapRect = mapEl.getBoundingClientRect();
+      const popupContainer = popup._container;
+      const popupContent = popupContainer.querySelector(".leaflet-popup-content");
+      const popupWrapper = popupContainer.querySelector(".leaflet-popup-content-wrapper");
 
-      popup.options.autoPan = true;
-      popup.options.keepInView = true;
-      popup.options.autoPanPaddingTopLeft = padding.topLeft;
-      popup.options.autoPanPaddingBottomRight = padding.bottomRight;
+      // Make popup scroll internally if it is too tall for the visible safe area
+      const safeWidth = Math.max(180, mapRect.width - padding.topLeft[0] - padding.bottomRight[0] - 12);
+      const safeHeight = Math.max(160, mapRect.height - padding.topLeft[1] - padding.bottomRight[1] - 12);
 
-      if (typeof popup.update === "function") {
-        popup.update();
+      if (popupWrapper) {
+        popupWrapper.style.maxWidth = `${Math.min(290, safeWidth)}px`;
       }
+
+      if (popupContent) {
+        const contentVerticalMargins = 24;
+        popupContent.style.maxHeight = `${Math.max(100, safeHeight - contentVerticalMargins)}px`;
+      }
+
+      // Wait one frame so the browser applies the new popup size before measuring
+      requestAnimationFrame(function () {
+        if (!popup || !popup._map || !popup._container) return;
+
+        const rect = popup._container.getBoundingClientRect();
+
+        const safeLeft = mapRect.left + padding.topLeft[0];
+        const safeTop = mapRect.top + padding.topLeft[1];
+        const safeRight = mapRect.right - padding.bottomRight[0];
+        const safeBottom = mapRect.bottom - padding.bottomRight[1];
+
+        let dx = 0;
+        let dy = 0;
+
+        if (rect.left < safeLeft) {
+          dx = rect.left - safeLeft;
+        } else if (rect.right > safeRight) {
+          dx = rect.right - safeRight;
+        }
+
+        if (rect.top < safeTop) {
+          dy = rect.top - safeTop;
+        } else if (rect.bottom > safeBottom) {
+          dy = rect.bottom - safeBottom;
+        }
+
+        if (dx === 0 && dy === 0) return;
+
+        popupPanLock = true;
+
+        map.panBy([dx, dy], {
+          animate: false,
+          noMoveStart: true
+        });
+
+        setTimeout(function () {
+          popupPanLock = false;
+        }, 0);
+      });
     }
 
     map.on("popupopen", function (e) {
       initPopupCarousels(e.popup.getElement());
+
       keepPopupFullyVisible(e.popup);
+
+      setTimeout(function () {
+        keepPopupFullyVisible(e.popup);
+      }, 40);
+
+      setTimeout(function () {
+        keepPopupFullyVisible(e.popup);
+      }, 140);
+
+      const popupEl = e.popup.getElement();
+      if (popupEl) {
+        popupEl.querySelectorAll("img").forEach(img => {
+          img.addEventListener("load", function () {
+            if (map._popup === e.popup) {
+              keepPopupFullyVisible(e.popup);
+            }
+          });
+        });
+      }
     });
 
     map.on("resize", function () {
