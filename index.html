@@ -57,14 +57,30 @@
       pointer-events: auto;
     }
 
-    /* Allow popup content to size naturally */
+    /* Make popup stay visually contained and scroll when too tall */
     .leaflet-popup-content-wrapper {
-      overflow: visible;
+      overflow: hidden;
       border-radius: 12px;
+      max-height: min(72vh, 460px);
     }
 
     .leaflet-popup-content {
       margin: 10px 10px 12px 10px;
+      max-height: calc(min(72vh, 460px) - 24px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      box-sizing: border-box;
+      padding-right: 2px;
+      scrollbar-width: thin;
+    }
+
+    .leaflet-popup-content::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .leaflet-popup-content::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.22);
+      border-radius: 999px;
     }
 
     /* Make bottom-right controls sit nicely in one row */
@@ -571,8 +587,13 @@
 
     /* Mobile popup sizing */
     @media (max-width: 768px) {
+      .leaflet-popup-content-wrapper {
+        max-height: min(76vh, 380px);
+      }
+
       .leaflet-popup-content {
         margin: 8px 8px 10px 8px;
+        max-height: calc(min(76vh, 380px) - 20px);
       }
 
       .popup-card {
@@ -1564,7 +1585,6 @@
         panelToggleButton.setAttribute("aria-label", "Hide panel");
       }
 
-      // If a popup is open, re-fit it after the panel size changes
       const openPopup = map._popup;
       if (openPopup) {
         setTimeout(function () {
@@ -1624,9 +1644,10 @@
       };
     }
 
-    // Re-pan popup so it stays fully on screen and away from controls
+    // Recursion-safe popup visibility handler:
+    // only update popup padding and refresh layout, never manually panBy().
     function keepPopupFullyVisible(popup) {
-      if (!popup || !popup._map || !popup._container) return;
+      if (!popup || !popup._map) return;
 
       const padding = getVisibleMapPadding();
 
@@ -1635,45 +1656,9 @@
       popup.options.autoPanPaddingTopLeft = padding.topLeft;
       popup.options.autoPanPaddingBottomRight = padding.bottomRight;
 
-      popup.update();
-
-      setTimeout(function () {
-        if (!popup._map || !popup._container) return;
-
-        setTimeout(function () {
-          if (!popup._map || !popup._container) return;
-
-          const mapRect = map.getContainer().getBoundingClientRect();
-          const popupRect = popup._container.getBoundingClientRect();
-
-          const safeLeft = mapRect.left + padding.topLeft[0];
-          const safeTop = mapRect.top + padding.topLeft[1];
-          const safeRight = mapRect.right - padding.bottomRight[0];
-          const safeBottom = mapRect.bottom - padding.bottomRight[1];
-
-          let dx = 0;
-          let dy = 0;
-
-          if (popupRect.right > safeRight) {
-            dx = popupRect.right - safeRight;
-          } else if (popupRect.left < safeLeft) {
-            dx = popupRect.left - safeLeft;
-          }
-
-          if (popupRect.bottom > safeBottom) {
-            dy = popupRect.bottom - safeBottom;
-          } else if (popupRect.top < safeTop) {
-            dy = popupRect.top - safeTop;
-          }
-
-          if (dx !== 0 || dy !== 0) {
-            map.panBy([dx, dy], {
-              animate: true,
-              duration: 0.25
-            });
-          }
-        }, 30);
-      }, 20);
+      if (typeof popup.update === "function") {
+        popup.update();
+      }
     }
 
     map.on("popupopen", function (e) {
@@ -1742,7 +1727,6 @@
           <span class="github-commit-muted">• ${formattedDateTime}</span>
         `;
 
-        // If a popup is open, recalc padding because this control width changed
         if (map._popup) {
           setTimeout(function () {
             keepPopupFullyVisible(map._popup);
