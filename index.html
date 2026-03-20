@@ -57,28 +57,14 @@
       pointer-events: auto;
     }
 
-    /* Popup wrapper and content */
+    /* Allow popup content to size naturally */
     .leaflet-popup-content-wrapper {
-      overflow: hidden;
+      overflow: visible;
       border-radius: 12px;
     }
 
     .leaflet-popup-content {
       margin: 10px 10px 12px 10px;
-      overflow-y: auto;
-      overflow-x: hidden;
-      box-sizing: border-box;
-      padding-right: 2px;
-      scrollbar-width: thin;
-    }
-
-    .leaflet-popup-content::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    .leaflet-popup-content::-webkit-scrollbar-thumb {
-      background: rgba(0,0,0,0.22);
-      border-radius: 999px;
     }
 
     /* Make bottom-right controls sit nicely in one row */
@@ -1412,10 +1398,12 @@
         pane: "categoryPinPane"
       }).bindPopup(makePopup(pin), {
         pane: "popupPane",
-        autoPan: false,
-        keepInView: false,
+        autoPan: true,
+        keepInView: true,
         closeButton: true,
-        maxWidth: 290
+        maxWidth: 290,
+        autoPanPaddingTopLeft: [20, 20],
+        autoPanPaddingBottomRight: [20, 20]
       });
 
       // Make either marker open the same popup
@@ -1576,6 +1564,7 @@
         panelToggleButton.setAttribute("aria-label", "Hide panel");
       }
 
+      // If a popup is open, re-fit it after the panel size changes
       const openPopup = map._popup;
       if (openPopup) {
         setTimeout(function () {
@@ -1635,96 +1624,61 @@
       };
     }
 
-    let popupPanLock = false;
-
+    // Re-pan popup so it stays fully on screen and away from controls
     function keepPopupFullyVisible(popup) {
       if (!popup || !popup._map || !popup._container) return;
-      if (popupPanLock) return;
 
       const padding = getVisibleMapPadding();
-      const mapEl = map.getContainer();
-      const mapRect = mapEl.getBoundingClientRect();
-      const popupContainer = popup._container;
-      const popupContent = popupContainer.querySelector(".leaflet-popup-content");
-      const popupWrapper = popupContainer.querySelector(".leaflet-popup-content-wrapper");
 
-      // Make popup scroll internally if it is too tall for the visible safe area
-      const safeWidth = Math.max(180, mapRect.width - padding.topLeft[0] - padding.bottomRight[0] - 12);
-      const safeHeight = Math.max(160, mapRect.height - padding.topLeft[1] - padding.bottomRight[1] - 12);
+      popup.options.autoPan = true;
+      popup.options.keepInView = true;
+      popup.options.autoPanPaddingTopLeft = padding.topLeft;
+      popup.options.autoPanPaddingBottomRight = padding.bottomRight;
 
-      if (popupWrapper) {
-        popupWrapper.style.maxWidth = `${Math.min(290, safeWidth)}px`;
-      }
+      popup.update();
 
-      if (popupContent) {
-        const contentVerticalMargins = 24;
-        popupContent.style.maxHeight = `${Math.max(100, safeHeight - contentVerticalMargins)}px`;
-      }
-
-      // Wait one frame so the browser applies the new popup size before measuring
-      requestAnimationFrame(function () {
-        if (!popup || !popup._map || !popup._container) return;
-
-        const rect = popup._container.getBoundingClientRect();
-
-        const safeLeft = mapRect.left + padding.topLeft[0];
-        const safeTop = mapRect.top + padding.topLeft[1];
-        const safeRight = mapRect.right - padding.bottomRight[0];
-        const safeBottom = mapRect.bottom - padding.bottomRight[1];
-
-        let dx = 0;
-        let dy = 0;
-
-        if (rect.left < safeLeft) {
-          dx = rect.left - safeLeft;
-        } else if (rect.right > safeRight) {
-          dx = rect.right - safeRight;
-        }
-
-        if (rect.top < safeTop) {
-          dy = rect.top - safeTop;
-        } else if (rect.bottom > safeBottom) {
-          dy = rect.bottom - safeBottom;
-        }
-
-        if (dx === 0 && dy === 0) return;
-
-        popupPanLock = true;
-
-        map.panBy([dx, dy], {
-          animate: false,
-          noMoveStart: true
-        });
+      setTimeout(function () {
+        if (!popup._map || !popup._container) return;
 
         setTimeout(function () {
-          popupPanLock = false;
-        }, 0);
-      });
+          if (!popup._map || !popup._container) return;
+
+          const mapRect = map.getContainer().getBoundingClientRect();
+          const popupRect = popup._container.getBoundingClientRect();
+
+          const safeLeft = mapRect.left + padding.topLeft[0];
+          const safeTop = mapRect.top + padding.topLeft[1];
+          const safeRight = mapRect.right - padding.bottomRight[0];
+          const safeBottom = mapRect.bottom - padding.bottomRight[1];
+
+          let dx = 0;
+          let dy = 0;
+
+          if (popupRect.right > safeRight) {
+            dx = popupRect.right - safeRight;
+          } else if (popupRect.left < safeLeft) {
+            dx = popupRect.left - safeLeft;
+          }
+
+          if (popupRect.bottom > safeBottom) {
+            dy = popupRect.bottom - safeBottom;
+          } else if (popupRect.top < safeTop) {
+            dy = popupRect.top - safeTop;
+          }
+
+          if (dx !== 0 || dy !== 0) {
+            map.panBy([dx, dy], {
+              animate: true,
+              duration: 0.25
+            });
+          }
+        }, 30);
+      }, 20);
     }
 
     map.on("popupopen", function (e) {
       initPopupCarousels(e.popup.getElement());
-
       keepPopupFullyVisible(e.popup);
-
-      setTimeout(function () {
-        keepPopupFullyVisible(e.popup);
-      }, 40);
-
-      setTimeout(function () {
-        keepPopupFullyVisible(e.popup);
-      }, 140);
-
-      const popupEl = e.popup.getElement();
-      if (popupEl) {
-        popupEl.querySelectorAll("img").forEach(img => {
-          img.addEventListener("load", function () {
-            if (map._popup === e.popup) {
-              keepPopupFullyVisible(e.popup);
-            }
-          });
-        });
-      }
     });
 
     map.on("resize", function () {
@@ -1788,6 +1742,7 @@
           <span class="github-commit-muted">• ${formattedDateTime}</span>
         `;
 
+        // If a popup is open, recalc padding because this control width changed
         if (map._popup) {
           setTimeout(function () {
             keepPopupFullyVisible(map._popup);
