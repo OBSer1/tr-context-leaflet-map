@@ -77,12 +77,19 @@
 
     /* Styling for the floating UI control panel (search + filters) */
     .map-ui {
-      background: rgba(255, 255, 255, 0.6);
+      background: rgba(255, 255, 255, 0.72);
       border-radius: 12px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+      box-shadow:
+        0 10px 28px rgba(0, 0, 0, 0.22),
+        0 3px 10px rgba(0, 0, 0, 0.10);
       padding: 12px;
       min-width: 220px;
       max-width: 260px;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      transition:
+        box-shadow 180ms ease,
+        background 180ms ease;
     }
 
     /* Header row for collapsible panel */
@@ -94,12 +101,22 @@
       margin-bottom: 10px;
     }
 
-    /* Title inside the filter panel */
-    .map-ui h3 {
-      margin: 0;
-      font-size: 15px;
-      line-height: 1.2;
+    /* Magnifying glass title */
+    .map-ui-title-icon {
+      width: 20px;
+      height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       color: #1f2a1a;
+      flex: 0 0 auto;
+    }
+
+    .map-ui-title-icon svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+      stroke: currentColor;
     }
 
     /* Collapse / expand button */
@@ -113,10 +130,34 @@
       cursor: pointer;
       line-height: 1;
       flex: 0 0 auto;
+      transition:
+        transform 160ms ease,
+        box-shadow 160ms ease,
+        background 160ms ease;
     }
 
     .panel-toggle-btn:hover {
       background: #f5f7f4;
+    }
+
+    /* Pulse the show button while hidden */
+    @keyframes panelPulse {
+      0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(92, 124, 79, 0.30);
+      }
+      50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 8px rgba(92, 124, 79, 0.00);
+      }
+      100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(92, 124, 79, 0.00);
+      }
+    }
+
+    .map-ui.collapsed .panel-toggle-btn {
+      animation: panelPulse 1.6s ease-in-out infinite;
     }
 
     /* Panel body that can be hidden */
@@ -131,6 +172,10 @@
     .map-ui.collapsed {
       min-width: auto;
       padding-bottom: 12px;
+    }
+
+    .map-ui.collapsed .map-ui-header {
+      margin-bottom: 0;
     }
 
     /* Search input box styling */
@@ -1500,7 +1545,12 @@
 
         div.innerHTML = `
           <div class="map-ui-header">
-            <h3>Find & Filter</h3>
+            <div class="map-ui-title-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="6.5"></circle>
+                <path d="M16 16L21 21"></path>
+              </svg>
+            </div>
             <button type="button" class="panel-toggle-btn" id="panel-toggle-btn" aria-label="Hide panel">Hide</button>
           </div>
 
@@ -1552,10 +1602,18 @@
     const categoryCheckboxes = document.querySelectorAll(".category-filter");
     const panelToggleButton = document.getElementById("panel-toggle-btn");
 
-    // COLLAPSE / EXPAND PANEL
-    panelToggleButton.addEventListener("click", function () {
-      mapUi.classList.toggle("collapsed");
+    // PANEL STATE HELPERS
+    let firstAutoHideHandled = false;
+    let firstAutoHideTimer = null;
 
+    function clearFirstAutoHideTimer() {
+      if (firstAutoHideTimer) {
+        clearTimeout(firstAutoHideTimer);
+        firstAutoHideTimer = null;
+      }
+    }
+
+    function updatePanelButtonState() {
       if (mapUi.classList.contains("collapsed")) {
         panelToggleButton.textContent = "Show";
         panelToggleButton.setAttribute("aria-label", "Show panel");
@@ -1563,13 +1621,60 @@
         panelToggleButton.textContent = "Hide";
         panelToggleButton.setAttribute("aria-label", "Hide panel");
       }
+    }
 
-      // If a popup is open, re-fit it after the panel size changes
+    function collapsePanel() {
+      if (mapUi.classList.contains("collapsed")) return;
+
+      mapUi.classList.add("collapsed");
+      updatePanelButtonState();
+
       const openPopup = map._popup;
       if (openPopup) {
         setTimeout(function () {
           keepPopupFullyVisible(openPopup);
         }, 60);
+      }
+    }
+
+    function expandPanel() {
+      if (!mapUi.classList.contains("collapsed")) return;
+
+      mapUi.classList.remove("collapsed");
+      updatePanelButtonState();
+
+      const openPopup = map._popup;
+      if (openPopup) {
+        setTimeout(function () {
+          keepPopupFullyVisible(openPopup);
+        }, 60);
+      }
+    }
+
+    function scheduleFirstAutoHide() {
+      if (firstAutoHideHandled) return;
+
+      clearFirstAutoHideTimer();
+      firstAutoHideTimer = setTimeout(function () {
+        firstAutoHideHandled = true;
+        collapsePanel();
+      }, 8000);
+    }
+
+    function handleFirstUserMapInteractionCollapse() {
+      if (!firstAutoHideHandled) {
+        firstAutoHideHandled = true;
+        clearFirstAutoHideTimer();
+      }
+      collapsePanel();
+    }
+
+    // COLLAPSE / EXPAND PANEL
+    panelToggleButton.addEventListener("click", function () {
+      if (mapUi.classList.contains("collapsed")) {
+        expandPanel();
+      } else {
+        collapsePanel();
       }
     });
 
@@ -1595,6 +1700,12 @@
 
     // INITIALIZE FILTER STATE
     applyFilters();
+    updatePanelButtonState();
+    scheduleFirstAutoHide();
+
+    // Collapse immediately if user drags or zooms the map
+    map.on("dragstart", handleFirstUserMapInteractionCollapse);
+    map.on("zoomstart", handleFirstUserMapInteractionCollapse);
 
     // Figure out how much padding the map needs so popups do not hide behind controls
     function getVisibleMapPadding() {
