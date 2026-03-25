@@ -101,43 +101,35 @@
       margin-bottom: 10px;
     }
 
-    /* Magnifying glass title */
-    .map-ui-title-icon {
-      width: 20px;
-      height: 20px;
+    /* Magnifying glass toggle button */
+    .panel-toggle-icon {
+      width: 34px;
+      height: 34px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      color: #1f2a1a;
-      flex: 0 0 auto;
-    }
-
-    .map-ui-title-icon svg {
-      width: 18px;
-      height: 18px;
-      display: block;
-      stroke: currentColor;
-    }
-
-    /* Collapse / expand button */
-    .panel-toggle-btn {
       border: 1px solid #cfd7cc;
       background: #ffffff;
-      color: #263123;
-      border-radius: 8px;
-      padding: 6px 10px;
-      font-size: 13px;
+      color: #1f2a1a;
+      border-radius: 10px;
       cursor: pointer;
-      line-height: 1;
       flex: 0 0 auto;
       transition:
         transform 160ms ease,
         box-shadow 160ms ease,
-        background 160ms ease;
+        background 160ms ease,
+        opacity 160ms ease;
     }
 
-    .panel-toggle-btn:hover {
+    .panel-toggle-icon:hover {
       background: #f5f7f4;
+    }
+
+    .panel-toggle-icon svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+      stroke: currentColor;
     }
 
     /* Pulse the show button while hidden */
@@ -156,7 +148,7 @@
       }
     }
 
-    .map-ui.collapsed .panel-toggle-btn {
+    .map-ui.collapsed .panel-toggle-icon {
       animation: panelPulse 1.6s ease-in-out infinite;
     }
 
@@ -171,11 +163,12 @@
 
     .map-ui.collapsed {
       min-width: auto;
-      padding-bottom: 12px;
+      padding: 12px;
     }
 
     .map-ui.collapsed .map-ui-header {
       margin-bottom: 0;
+      justify-content: center;
     }
 
     /* Search input box styling */
@@ -1545,13 +1538,18 @@
 
         div.innerHTML = `
           <div class="map-ui-header">
-            <div class="map-ui-title-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <button
+              type="button"
+              class="panel-toggle-icon"
+              id="panel-toggle-btn"
+              aria-label="Hide panel"
+              title="Hide panel"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <circle cx="11" cy="11" r="6.5"></circle>
                 <path d="M16 16L21 21"></path>
               </svg>
-            </div>
-            <button type="button" class="panel-toggle-btn" id="panel-toggle-btn" aria-label="Hide panel">Hide</button>
+            </button>
           </div>
 
           <div class="map-ui-body">
@@ -1615,11 +1613,11 @@
 
     function updatePanelButtonState() {
       if (mapUi.classList.contains("collapsed")) {
-        panelToggleButton.textContent = "Show";
         panelToggleButton.setAttribute("aria-label", "Show panel");
+        panelToggleButton.setAttribute("title", "Show panel");
       } else {
-        panelToggleButton.textContent = "Hide";
         panelToggleButton.setAttribute("aria-label", "Hide panel");
+        panelToggleButton.setAttribute("title", "Hide panel");
       }
     }
 
