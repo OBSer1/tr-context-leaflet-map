@@ -2,233 +2,1797 @@
 <html lang="en">
 <head>
 
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Timber Ridge Context Map</title>
+  <!-- Character encoding for proper text rendering -->
+  <meta charset="utf-8" />
 
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-/>
+  <!-- Ensures the map scales correctly on mobile devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<style>
+  <!-- Browser tab title -->
+  <title>Timber Ridge Context Map</title>
 
-/* Base layout */
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-}
+  <!-- Leaflet CSS (required for map styling and UI elements like zoom buttons) -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
 
-#map {
-  width: 100%;
-  height: 100vh;
-  background: #000;
-}
+  <style>
 
-.leaflet-container {
-  background: #000;
-  font-family: Arial, sans-serif;
-}
+    /* Removes default browser margins and forces full page sizing */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+    }
 
-/* Z-index fixes */
-.leaflet-top,
-.leaflet-bottom,
-.leaflet-control {
-  z-index: 700 !important;
-}
+    /* Main container that holds the map */
+    #map {
+      width: 100%;
+      height: 100vh;
+      background: #000000;
+    }
 
-.leaflet-popup-pane,
-.leaflet-popup {
-  z-index: 1400 !important;
-}
+    /* Default styling applied to the Leaflet map container */
+    .leaflet-container {
+      background: #000000;
+      font-family: Arial, sans-serif;
+    }
 
-/* Popup styling */
-.leaflet-popup-content-wrapper {
-  overflow: visible;
-  border-radius: 12px;
-}
+    /* Keep map controls below popups */
+    .leaflet-top,
+    .leaflet-bottom,
+    .leaflet-control {
+      z-index: 700 !important;
+    }
 
-.leaflet-popup-content {
-  margin: 10px;
-}
+    /* Ensure popups appear above controls and markers */
+    .leaflet-popup-pane {
+      z-index: 1400 !important;
+    }
 
-/* Controls layout */
-.leaflet-bottom.leaflet-right {
-  display: flex;
-  gap: 8px;
-}
+    .leaflet-popup {
+      z-index: 1400 !important;
+      pointer-events: auto;
+    }
 
-.leaflet-control-attribution {
-  display: none !important;
-}
+    /* Allow popup content to size naturally */
+    .leaflet-popup-content-wrapper {
+      overflow: visible;
+      border-radius: 12px;
+    }
 
-/* =========================
-   FILTER PANEL (UPDATED)
-   ========================= */
+    .leaflet-popup-content {
+      margin: 10px 10px 12px 10px;
+    }
 
-.map-ui {
-  background: rgba(255,255,255,0.72);
-  border-radius: 12px;
-  box-shadow:
-    0 10px 28px rgba(0,0,0,0.22),
-    0 3px 10px rgba(0,0,0,0.10);
-  padding: 12px;
-  min-width: 220px;
-  max-width: 260px;
-  backdrop-filter: blur(6px);
-  transform-origin: top right;
-  overflow: hidden;
+    /* Make bottom-right controls sit nicely in one row */
+    .leaflet-bottom.leaflet-right {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
 
-  transition:
-    transform 1000ms ease,
-    opacity 1000ms ease,
-    padding 1000ms ease,
-    min-width 1000ms ease,
-    max-width 1000ms ease;
-}
+    /* Hide attribution / Leaflet badge */
+    .leaflet-control-attribution {
+      display: none !important;
+    }
 
-/* Body animates vertically */
-.map-ui-body {
-  max-height: 500px;
-  opacity: 1;
-  transform: scaleY(1);
-  transform-origin: top;
-  overflow: hidden;
+    /* Styling for the floating UI control panel (search + filters) */
+    .map-ui {
+      background: rgba(255, 255, 255, 0.72);
+      border-radius: 12px;
+      box-shadow:
+        0 10px 28px rgba(0, 0, 0, 0.22),
+        0 3px 10px rgba(0, 0, 0, 0.10);
+      padding: 12px;
+      min-width: 220px;
+      max-width: 260px;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      transition:
+        box-shadow 180ms ease,
+        background 180ms ease;
+    }
 
-  transition:
-    max-height 1000ms ease,
-    opacity 1000ms ease,
-    transform 1000ms ease;
-}
+    /* Match zoom buttons to filter panel */
+    .leaflet-control-zoom {
+      border: none !important;
+      box-shadow:
+        0 10px 28px rgba(0, 0, 0, 0.22),
+        0 3px 10px rgba(0, 0, 0, 0.10) !important;
+      border-radius: 12px !important;
+      overflow: hidden;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      background: transparent !important;
+    }
 
-/* Collapsed state */
-.map-ui.collapsed {
-  min-width: 58px;
-  max-width: 58px;
-}
+    .leaflet-control-zoom a {
+      background: rgba(255, 255, 255, 0.72) !important;
+      color: #1f2a1a !important;
+      border: none !important;
+      width: 34px;
+      height: 34px;
+      line-height: 34px;
+      transition:
+        background 160ms ease,
+        opacity 160ms ease,
+        box-shadow 160ms ease;
+    }
 
-.map-ui.collapsed .map-ui-body {
-  max-height: 0;
-  opacity: 0;
-  transform: scaleY(0);
-  pointer-events: none;
-}
+    .leaflet-control-zoom a:hover {
+      background: rgba(245, 247, 244, 0.90) !important;
+    }
 
-/* Header */
-.map-ui-header {
-  display: flex;
-  justify-content: center;
-  cursor: pointer;
-}
+    .leaflet-control-zoom a:first-child {
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+    }
 
-/* Pulsing button */
-.pulse {
-  animation: pulse 1.2s infinite;
-}
+    .leaflet-control-zoom a:last-child {
+      border-bottom-left-radius: 12px;
+      border-bottom-right-radius: 12px;
+    }
 
-@keyframes pulse {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.15); opacity: 0.6; }
-  100% { transform: scale(1); opacity: 1; }
-}
+    .leaflet-touch .leaflet-control-zoom a {
+      width: 34px;
+      height: 34px;
+      line-height: 34px;
+      font-size: 20px;
+    }
 
-</style>
+    /* Header row for collapsible panel */
+    .map-ui-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    /* Magnifying glass toggle button */
+    .panel-toggle-icon {
+      width: 34px;
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #cfd7cc;
+      background: #ffffff;
+      color: #1f2a1a;
+      border-radius: 10px;
+      cursor: pointer;
+      flex: 0 0 auto;
+      transition:
+        transform 160ms ease,
+        box-shadow 160ms ease,
+        background 160ms ease,
+        opacity 160ms ease;
+    }
+
+    .panel-toggle-icon:hover {
+      background: #f5f7f4;
+    }
+
+    .panel-toggle-icon svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+      stroke: currentColor;
+    }
+
+    /* Pulse the show button while hidden */
+    @keyframes panelPulse {
+      0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(92, 124, 79, 0.30);
+      }
+      50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 8px rgba(92, 124, 79, 0.00);
+      }
+      100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(92, 124, 79, 0.00);
+      }
+    }
+
+    .map-ui.collapsed .panel-toggle-icon {
+      animation: panelPulse 1.6s ease-in-out infinite;
+    }
+
+    /* Panel body that can be hidden */
+    .map-ui-body {
+      display: block;
+    }
+
+    .map-ui.collapsed .map-ui-body {
+      display: none;
+    }
+
+    .map-ui.collapsed {
+      min-width: auto;
+      padding: 12px;
+    }
+
+    .map-ui.collapsed .map-ui-header {
+      margin-bottom: 0;
+      justify-content: center;
+    }
+
+    /* Search input box styling */
+    .map-ui .search-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 9px 10px;
+      border: 1px solid #cfd7cc;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 10px;
+      outline: none;
+    }
+
+    /* Highlight color when search box is active */
+    .map-ui .search-input:focus {
+      border-color: #5c7c4f;
+    }
+
+    /* Layout for each filter row */
+    .map-ui label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      margin: 7px 0;
+      color: #263123;
+      cursor: pointer;
+    }
+
+    /* Small colored dot used in the filter legend */
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      flex: 0 0 auto;
+    }
+
+    /* Category colors used in the legend - matched to pin colors */
+    .legend-timberridgeproperties { background: #D6B65C; }
+    .legend-communities { background: #C2A96A; }
+    .legend-golf { background: #7A4E2D; }
+    .legend-fishing { background: #4A5D73; }
+    .legend-skiing { background: #7D848A; }
+    .legend-adventure { background: #6E3B3B; }
+    .legend-parks { background: #2F4F3E; }
+
+    /* Container styling for popup cards */
+    .popup-card {
+      width: min(78vw, 270px);
+      max-width: 270px;
+      line-height: 1.35;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Row of category badges at top of popup */
+    .popup-categories {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 8px;
+    }
+
+    /* Category badge */
+    .popup-card .category {
+      display: inline-block;
+      font-size: 10px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 3px 7px;
+      border-radius: 999px;
+      color: #fff;
+    }
+
+    /* Category badge colors */
+    .cat-timberridgeproperties { background: #D6B65C; }
+    .cat-communities { background: #C2A96A; }
+    .cat-golf { background: #7A4E2D; }
+    .cat-fishing { background: #4A5D73; }
+    .cat-skiing { background: #7D848A; }
+    .cat-adventure { background: #6E3B3B; }
+    .cat-parks { background: #2F4F3E; }
+
+    /* New popup content row */
+    .popup-main {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Carousel gallery */
+    .popup-carousel {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .popup-carousel-stage {
+      position: relative;
+      width: 100%;
+      height: 170px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #eef2eb;
+    }
+
+    .popup-carousel-main-image {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      object-position: center;
+      background: #eef2eb;
+    }
+
+    .popup-carousel-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 30px;
+      height: 30px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(22, 28, 20, 0.72);
+      color: #ffffff;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 3;
+      transition: background 160ms ease, transform 160ms ease;
+    }
+
+    .popup-carousel-arrow:hover {
+      background: rgba(22, 28, 20, 0.88);
+    }
+
+    .popup-carousel-arrow:active {
+      transform: translateY(-50%) scale(0.96);
+    }
+
+    .popup-carousel-arrow.prev {
+      left: 8px;
+    }
+
+    .popup-carousel-arrow.next {
+      right: 8px;
+    }
+
+    .popup-carousel-thumbs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-bottom: 2px;
+      scrollbar-width: thin;
+    }
+
+    .popup-carousel-thumbs::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .popup-carousel-thumb {
+      flex: 0 0 54px;
+      width: 54px;
+      height: 40px;
+      padding: 0;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      background: #eef2eb;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 160ms ease, transform 160ms ease, opacity 160ms ease;
+      opacity: 0.72;
+    }
+
+    .popup-carousel-thumb:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+
+    .popup-carousel-thumb.active {
+      border-color: #5c7c4f;
+      opacity: 1;
+    }
+
+    .popup-carousel-thumb img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .popup-carousel.single-image .popup-carousel-arrow,
+    .popup-carousel.single-image .popup-carousel-thumbs {
+      display: none;
+    }
+
+    /* Right side text stack */
+    .popup-text {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    /* Popup title */
+    .popup-card h4 {
+      margin: 0 0 5px 0;
+      font-size: 14px;
+      color: #1f2a1a;
+      line-height: 1.2;
+    }
+
+    /* Popup description text */
+    .popup-description {
+      margin: 0 0 6px 0;
+      font-size: 12px;
+      color: #364233;
+    }
+
+    .popup-description p {
+      margin: 0 0 7px 0;
+    }
+
+    .popup-description ul {
+      margin: 0 0 7px 16px;
+      padding: 0;
+    }
+
+    .popup-description li {
+      margin: 0 0 3px 0;
+    }
+
+    /* Popup URL block */
+    .popup-url {
+      font-size: 11px;
+      color: #5c7c4f;
+      word-break: break-word;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .popup-url a {
+      color: #5c7c4f;
+      text-decoration: none;
+    }
+
+    .popup-url a:hover {
+      text-decoration: underline;
+    }
+
+    /* Wrapper for custom pin icons */
+    .custom-pin-wrap,
+    .custom-png-wrap {
+      background: transparent;
+      border: none;
+      overflow: visible !important;
+    }
+
+    /* Shared shell so pin and shadow can animate independently */
+    .pin-shell,
+    .png-pin-shell {
+      position: relative;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    .pin-shell {
+      width: 30px;
+      height: 40px;
+    }
+
+    .png-pin-shell {
+      width: 100px;
+      height: 148px;
+    }
+
+    /* Google-Maps style floating shadow */
+    .pin-shadow {
+      position: absolute;
+      left: 50%;
+      bottom: 2px;
+      transform: translateX(-50%) scale(1);
+      border-radius: 50%;
+      background: radial-gradient(
+        ellipse at center,
+        rgba(0,0,0,0.34) 0%,
+        rgba(0,0,0,0.20) 42%,
+        rgba(0,0,0,0.10) 68%,
+        rgba(0,0,0,0.00) 100%
+      );
+      filter: blur(1.4px);
+      transition:
+        transform 180ms ease,
+        opacity 180ms ease,
+        width 180ms ease,
+        height 180ms ease;
+      transform-origin: center center;
+      pointer-events: none;
+    }
+
+    .pin-shell .pin-shadow {
+      width: 18px;
+      height: 7px;
+    }
+
+    .png-pin-shell .pin-shadow {
+      width: 44px;
+      height: 14px;
+      bottom: 0;
+      filter: blur(2.2px);
+    }
+
+    /* Base category pin shape */
+    .pin-badge {
+      width: 18px;
+      height: 18px;
+      border-radius: 50% 50% 50% 50%;
+      transform: rotate(-45deg) translateY(0);
+      border: 2px solid rgba(255,255,255,0.96);
+      position: absolute;
+      left: 50%;
+      top: 3px;
+      margin-left: -11px;
+      box-shadow:
+        0 1px 2px rgba(0,0,0,0.18),
+        0 3px 8px rgba(0,0,0,0.18);
+      transition:
+        transform 180ms ease,
+        box-shadow 180ms ease;
+      will-change: transform;
+    }
+
+    /* Inner white dot */
+    .pin-badge::after {
+      content: "";
+      width: 4px;
+      height: 4px;
+      background: white;
+      border-radius: 50%;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(45deg);
+    }
+
+    /* PNG image marker styling */
+    .png-pin-image {
+      width: 100px;
+      height: 138px;
+      object-fit: contain;
+      display: block;
+      position: absolute;
+      left: 0;
+      top: 0;
+      transform: translateY(0);
+      transform-origin: center bottom;
+      transition:
+        transform 180ms ease,
+        filter 180ms ease;
+      filter:
+        drop-shadow(0 2px 2px rgba(0,0,0,0.14))
+        drop-shadow(0 7px 12px rgba(0,0,0,0.18));
+      pointer-events: none;
+    }
+
+    /* Hover elevation for both marker types */
+    .pin-hover .pin-badge {
+      transform: rotate(-45deg) translateY(-4px);
+      box-shadow:
+        0 3px 5px rgba(0,0,0,0.20),
+        0 8px 16px rgba(0,0,0,0.22);
+    }
+
+    .pin-hover .png-pin-image {
+      transform: translateY(-5px);
+      filter:
+        drop-shadow(0 3px 3px rgba(0,0,0,0.16))
+        drop-shadow(0 10px 18px rgba(0,0,0,0.22));
+    }
+
+    .pin-hover .pin-shadow {
+      transform: translateX(-50%) scale(1.28);
+      opacity: 0.82;
+    }
+
+    .pin-hover.png-pin-shell .pin-shadow,
+    .pin-hover .png-pin-shell .pin-shadow {
+      transform: translateX(-50%) scale(1.2);
+    }
+
+    /* Single-category fallback colors */
+    .pin-timberridgeproperties { background: #D6B65C; }
+    .pin-communities { background: #C2A96A; }
+    .pin-golf { background: #7A4E2D; }
+    .pin-fishing { background: #4A5D73; }
+    .pin-skiing { background: #7D848A; }
+    .pin-adventure { background: #6E3B3B; }
+    .pin-parks { background: #2F4F3E; }
+
+    /* Mobile popup sizing */
+    @media (max-width: 768px) {
+      .leaflet-popup-content {
+        margin: 8px 8px 10px 8px;
+      }
+
+      .popup-card {
+        width: min(74vw, 230px);
+        max-width: 230px;
+      }
+
+      .popup-carousel-stage {
+        height: 138px;
+      }
+
+      .popup-carousel-thumb {
+        flex-basis: 48px;
+        width: 48px;
+        height: 36px;
+      }
+
+      .popup-carousel-arrow {
+        width: 28px;
+        height: 28px;
+        font-size: 16px;
+      }
+
+      .popup-card .category {
+        font-size: 9px;
+        padding: 3px 6px;
+      }
+
+      .popup-card h4 {
+        font-size: 13px;
+      }
+
+      .popup-description {
+        font-size: 11px;
+      }
+
+      .popup-url {
+        font-size: 10px;
+      }
+
+      .map-ui {
+        max-width: 230px;
+      }
+    }
+
+  </style>
 </head>
 
 <body>
 
-<div id="map"></div>
+  <div id="map"></div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<script>
+  <script>
 
-/* =========================
-   MAP INIT
-   ========================= */
+    // IMAGE / TILESET SETTINGS
+    const imageWidth = 9216;
+    const imageHeight = 6144;
+    const minZoom = 0;
+    const maxZoom = 5;
+    const tileSize = 512;
 
-const map = L.map('map').setView([50.8, -114.7], 7);
+    // CREATE THE LEAFLET MAP
+    const map = L.map("map", {
+      crs: L.CRS.Simple,
+      minZoom: minZoom,
+      maxZoom: maxZoom,
+      zoomSnap: 1,
+      zoomDelta: 1,
+      wheelPxPerZoomLevel: 120,
+      maxBoundsViscosity: 1.0,
+      attributionControl: false
+    });
 
-L.tileLayer(
-  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-).addTo(map);
+    // CREATE PANES
+    map.createPane("locationPinPane");
+    map.getPane("locationPinPane").style.zIndex = 450;
 
-/* =========================
-   FILTER PANEL CONTROL
-   ========================= */
+    map.createPane("categoryPinPane");
+    map.getPane("categoryPinPane").style.zIndex = 650;
 
-const FilterControl = L.Control.extend({
-  onAdd: function () {
+    map.createPane("popupPane");
+    map.getPane("popupPane").style.zIndex = 1400;
 
-    const container = L.DomUtil.create('div', 'map-ui');
+    // DEFINE MAP BOUNDS
+    const southWest = map.unproject([0, imageHeight], maxZoom);
+    const northEast = map.unproject([imageWidth, 0], maxZoom);
+    const bounds = L.latLngBounds(southWest, northEast);
 
-    container.innerHTML = `
-      <div class="map-ui-header">
-        🔍
-      </div>
-      <div class="map-ui-body">
-        <div>Filter content here</div>
-      </div>
-    `;
+    // ADD TILE LAYER
+    L.tileLayer(
+      "https://api.maptiler.com/images/019d25f6-d20a-7e87-ae72-0ebb550abcc2/{z}/{x}/{y}?key=HeGrCVsbkGCIdm3hjmI5",
+      {
+        tileSize: tileSize,
+        minZoom: minZoom,
+        maxZoom: maxZoom,
+        noWrap: true,
+        bounds: bounds,
+        attribution: ""
+      }
+    ).addTo(map);
 
-    L.DomEvent.disableClickPropagation(container);
+    // LOCK MAP VIEW INSIDE IMAGE
+    map.setMaxBounds(bounds);
+    map.fitBounds(bounds);
+    map.panInsideBounds(bounds, { animate: false });
 
-    return container;
-  }
-});
+    // Converts pixel coordinates into Leaflet coordinates
+    function pointFromImagePixels(x, y) {
+      return map.unproject([x, y], maxZoom);
+    }
 
-const filterControl = new FilterControl({ position: 'topright' });
-filterControl.addTo(map);
+    // Category label lookup
+    function getCategoryLabel(category) {
+      const labelMap = {
+        timberridgeproperties: "Timber Ridge Properties",
+        communities: "Communities",
+        golf: "Golf",
+        fishing: "Fishing",
+        skiing: "Skiing",
+        adventure: "Adventure",
+        parks: "Parks"
+      };
 
-/* =========================
-   PANEL LOGIC
-   ========================= */
+      return labelMap[category] || category;
+    }
 
-let panel = document.querySelector('.map-ui');
-let firstAutoHideHandled = false;
-let timer = null;
+    // Category color lookup
+    function getCategoryColor(category) {
+      const colorMap = {
+        timberridgeproperties: "#D6B65C",
+        communities: "#C2A96A",
+        golf: "#7A4E2D",
+        fishing: "#4A5D73",
+        skiing: "#7D848A",
+        adventure: "#6E3B3B",
+        parks: "#2F4F3E"
+      };
 
-/* Collapse */
-function collapsePanel() {
-  panel.classList.add('collapsed');
-  panel.querySelector('.map-ui-header').classList.add('pulse');
-}
+      return colorMap[category] || "#666666";
+    }
 
-/* Expand */
-function expandPanel() {
-  panel.classList.remove('collapsed');
-  panel.querySelector('.map-ui-header').classList.remove('pulse');
-}
+    // Build conic-gradient string for multi-category pin
+    function makeSplitPinBackground(categories) {
+      const uniqueCategories = [...new Set(categories)];
+      const segmentSize = 360 / uniqueCategories.length;
 
-/* Auto-hide after 1 second */
-function scheduleAutoHide() {
-  if (firstAutoHideHandled) return;
+      const stops = uniqueCategories.map((category, index) => {
+        const start = index * segmentSize;
+        const end = (index + 1) * segmentSize;
+        const color = getCategoryColor(category);
+        return `${color} ${start}deg ${end}deg`;
+      });
 
-  clearTimeout(timer);
-  timer = setTimeout(() => {
-    firstAutoHideHandled = true;
-    collapsePanel();
-  }, 1000); // ← KEY CHANGE
-}
+      return `conic-gradient(${stops.join(", ")})`;
+    }
 
-/* Toggle on click */
-panel.querySelector('.map-ui-header').addEventListener('click', () => {
-  if (panel.classList.contains('collapsed')) {
-    expandPanel();
-  } else {
-    collapsePanel();
-  }
-});
+    // Clean URL text for popup display
+    function getDisplayUrl(url) {
+      if (!url) return "";
+      return url
+        .replace(/^https?:\/\//i, "")
+        .replace(/\/+$/, "");
+    }
 
-/* Collapse on map interaction */
-map.on('zoomstart dragstart', collapsePanel);
+    // Normalize URL so links still work
+    function getSafeUrl(url) {
+      if (!url) return "";
+      return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+    }
 
-/* Start timer on load */
-scheduleAutoHide();
+    // Convert locationexternalURL into a clean array of URLs
+    function normalizeUrls(urlValue) {
+      if (!urlValue) return [];
 
-</script>
+      let urls = [];
 
+      if (Array.isArray(urlValue)) {
+        urls = urlValue;
+      } else if (typeof urlValue === "string") {
+        urls = urlValue.split(",");
+      } else {
+        return [];
+      }
+
+      return urls
+        .map(url => String(url).trim())
+        .filter(url => url.length > 0);
+    }
+
+    // Convert gallery input into a clean array of URLs
+    function normalizeGalleryImages(pin) {
+      const gallery = [];
+
+      if (pin.uniquePinUrl) {
+        gallery.push(String(pin.uniquePinUrl).trim());
+      }
+
+      if (Array.isArray(pin.popupGalleryImages)) {
+        pin.popupGalleryImages.forEach(url => {
+          const cleanUrl = String(url || "").trim();
+          if (cleanUrl && !gallery.includes(cleanUrl)) {
+            gallery.push(cleanUrl);
+          }
+        });
+      }
+
+      return gallery.slice(0, 8);
+    }
+
+    // Escape plain text descriptions so HTML descriptions can be supported safely
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    // Escape HTML for attribute values
+    function escapeAttribute(str) {
+      return escapeHtml(str).replace(/`/g, "&#96;");
+    }
+
+    // Detect whether a description contains HTML
+    function formatDescription(description) {
+      if (description == null) return "";
+      const text = String(description).trim();
+      const looksLikeHtml = /<[^>]+>/.test(text);
+
+      if (looksLikeHtml) {
+        return text;
+      }
+
+      return `<p>${escapeHtml(text)}</p>`;
+    }
+
+    // Build popup gallery HTML
+    function makePopupGallery(pin) {
+      const galleryImages = normalizeGalleryImages(pin);
+
+      if (!galleryImages.length) {
+        return "";
+      }
+
+      const galleryId = `gallery-${String(pin.name)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")}`;
+
+      const thumbButtonsHtml = galleryImages.map((url, index) => {
+        const altText = `${pin.name} photo ${index + 1}`;
+        return `
+          <button
+            type="button"
+            class="popup-carousel-thumb ${index === 0 ? "active" : ""}"
+            data-index="${index}"
+            aria-label="Show image ${index + 1}">
+            <img
+              src="${escapeAttribute(url)}"
+              alt="${escapeAttribute(altText)}"
+            />
+          </button>
+        `;
+      }).join("");
+
+      const firstImage = galleryImages[0];
+      const firstAlt = `${pin.name} photo 1`;
+
+      return `
+        <div
+          class="popup-carousel ${galleryImages.length === 1 ? "single-image" : ""}"
+          data-gallery-id="${escapeAttribute(galleryId)}"
+          data-images='${escapeAttribute(JSON.stringify(galleryImages))}'
+          data-title="${escapeAttribute(pin.name)}"
+          data-current-index="0"
+        >
+          <div class="popup-carousel-stage">
+            <img
+              class="popup-carousel-main-image"
+              src="${escapeAttribute(firstImage)}"
+              alt="${escapeAttribute(firstAlt)}"
+            />
+            <button type="button" class="popup-carousel-arrow prev" aria-label="Previous image">&#10094;</button>
+            <button type="button" class="popup-carousel-arrow next" aria-label="Next image">&#10095;</button>
+          </div>
+          <div class="popup-carousel-thumbs">
+            ${thumbButtonsHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    // GENERATES POPUP HTML FOR EACH PIN
+    function makePopup(pin) {
+      const urls = normalizeUrls(pin.locationexternalURL);
+
+      const urlLinksHtml = urls.map(url => {
+        const safeUrl = getSafeUrl(url);
+        const displayUrl = getDisplayUrl(url);
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${displayUrl}</a>`;
+      }).join("");
+
+      const categoryBadges = pin.categories.map(category => {
+        return `<div class="category cat-${category}">${getCategoryLabel(category)}</div>`;
+      }).join("");
+
+      return `
+        <div class="popup-card">
+          <div class="popup-categories">
+            ${categoryBadges}
+          </div>
+          <div class="popup-main">
+            ${makePopupGallery(pin)}
+            <div class="popup-text">
+              <h4>${pin.name}</h4>
+              <div class="popup-description">${formatDescription(pin.description)}</div>
+              <div class="popup-url">
+                ${urlLinksHtml}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // CREATES A CATEGORY PIN ICON
+    function makeCategoryIcon(categories) {
+      const uniqueCategories = [...new Set(categories)];
+      let badgeHtml = "";
+
+      if (uniqueCategories.length === 1) {
+        badgeHtml = `<div class="pin-badge pin-${uniqueCategories[0]}"></div>`;
+      } else {
+        const splitBackground = makeSplitPinBackground(uniqueCategories);
+        badgeHtml = `
+          <div
+            class="pin-badge"
+            style="background: ${splitBackground};">
+          </div>
+        `;
+      }
+
+      return L.divIcon({
+        className: "custom-pin-wrap",
+        html: `
+          <div class="pin-shell">
+            <div class="pin-shadow"></div>
+            ${badgeHtml}
+          </div>
+        `,
+        iconSize: [30, 40],
+        iconAnchor: [15, 36],
+        popupAnchor: [0, -28]
+      });
+    }
+
+    // CREATES A UNIQUE PNG ICON FOR EACH LOCATION
+    function makeLocationPngIcon(url, altText) {
+      return L.divIcon({
+        className: "custom-png-wrap",
+        html: `
+          <div class="png-pin-shell">
+            <div class="pin-shadow"></div>
+            <img class="png-pin-image" src="${url}" alt="${altText || "Location icon"}" />
+          </div>
+        `,
+        iconSize: [100, 148],
+        iconAnchor: [50, 148],
+        popupAnchor: [0, -26]
+      });
+    }
+
+    // CATEGORY DEFINITIONS FOR UI
+    const categoryDefinitions = [
+      { value: "timberridgeproperties", label: "Timber Ridge Properties", legendClass: "legend-timberridgeproperties" },
+      { value: "communities", label: "Communities", legendClass: "legend-communities" },
+      { value: "golf", label: "Golf", legendClass: "legend-golf" },
+      { value: "fishing", label: "Fishing", legendClass: "legend-fishing" },
+      { value: "skiing", label: "Skiing", legendClass: "legend-skiing" },
+      { value: "adventure", label: "Adventure", legendClass: "legend-adventure" },
+      { value: "parks", label: "Parks", legendClass: "legend-parks" }
+    ];
+
+    // DATA FOR ALL MAP PINS
+    const pinData = [
+
+      {
+        name: "Timber Ridge Properties",
+        categories: ["timberridgeproperties"],
+        x: 4005,
+        y: 3758,
+        description: "Who knew living Wild would be so accessible!",
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/tr_icon.png"
+      },
+
+      {
+        name: "Banff",
+        categories: ["communities", "skiing", "adventure"],
+        x: 3365,
+        y: 2199,
+        description: `
+<p><strong>Banff</strong> is one of Alberta’s most iconic destinations, famous for its breathtaking Rocky Mountain scenery and world-class outdoor experiences.</p>
+
+<p>Visitors can experience:</p>
+
+<ul>
+  <li>The stunning turquoise waters of Lake Louise and Moraine Lake</li>
+  <li>Panoramic views from the Banff Gondola atop Sulphur Mountain</li>
+  <li>Hiking, wildlife viewing, and alpine adventure in Banff National Park</li>
+</ul>
+
+<p>It is one of the most spectacular mountain destinations in Canada.</p>
+`,
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/banff_logo.png",
+        locationexternalURL: ["https://www.banfflakelouise.com", "https://www.skibanff.com"]
+      },
+
+      {
+        name: "Calgary",
+        categories: ["communities"],
+        x: 5214,
+        y: 2335,
+        description: `
+<p><strong>Calgary</strong> is a dynamic western city where modern culture meets cowboy heritage, serving the closest international airport to Timber Ridge Properties.</p>
+
+<p>Visitors can experience:</p>
+
+<ul>
+  <li>The world-famous Calgary Stampede, known as “The Greatest Outdoor Show on Earth”</li>
+  <li>Panoramic skyline views from the Calgary Tower</li>
+  <li>Museums, dining, and nightlife in the vibrant downtown and Stephen Avenue district</li>
+  <li>Every big city amenity you might need</li>
+</ul>
+
+<p>Your hub to the world, culture and shopping.</p>
+`,
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Calgary_logo.png",
+        locationexternalURL: "https://www.visitcalgary.com"
+      },
+
+      {
+        name: "Drumheller",
+        categories: ["communities", "parks", "adventure"],
+        x: 7039,
+        y: 2013,
+        description: `
+          <div>
+            <p><strong>Drumheller</strong> is a UNESCO world Hertiage site; famous for its dramatic badlands and dinosaur heritage.</p>
+            <p>Visitors can experience:</p>
+            <ul>
+              <li>The world-renowned Royal Tyrrell Museum</li>
+              <li>The hoodoos and badlands hiking trails</li>
+              <li>Walk in the dinosaurs' footsteps in Dinosaur Provincial Park</li>
+            </ul>
+            <p>It is one of the most unique landscapes in Canada.</p>
+          </div>
+        `,
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/drumheller_icon.png",
+        locationexternalURL: [
+          "https://www.traveldrumheller.com",
+          "https://tyrrellmuseum.com",
+          "https://www.albertaparks.ca/parks/south/dinosaur-pp/"
+        ]
+      },
+
+      {
+        name: "Kimberley",
+        categories: ["communities", "skiing", "adventure"],
+        x: 536,
+        y: 3633,
+        description: `
+<p><strong>Kimberley</strong> is a charming mountain town in the Kootenay Rockies known for its outdoor adventure, alpine scenery, and welcoming small-town atmosphere.</p>
+
+<p>Visitors can experience:</p>
+
+<ul>
+  <li>World-class skiing and mountain biking at Kimberley Alpine Resort</li>
+  <li>Championship golf at Trickle Creek Golf Resort surrounded by mountain views</li>
+  <li>Hiking, wildlife viewing, and waterfalls in nearby nature parks</li>
+  <li>The Bavarian-inspired Platzl pedestrian village with shops, cafés, and festivals</li>
+</ul>
+
+<p>With year-round recreation and stunning Rocky Mountain landscapes, Kimberley is a premier destination for outdoor enthusiasts.</p>
+`,
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Kimberley_icon.png",
+        locationexternalURL: ["https://www.tourismkimberley.com", "https://www.skikimberley.com"]
+      },
+
+      {
+        name: "Fairmont Hotsprings",
+        categories: ["communities", "adventure"],
+        x: 1727,
+        y: 3224,
+        description: `
+<p><strong>Fairmont Hot Springs</strong> is a scenic mountain resort community in the Columbia Valley, known for its natural hot springs and year-round outdoor recreation.</p>
+
+<p>Visitors can experience:</p>
+
+<ul>
+  <li>The famous Fairmont Hot Springs pools with panoramic Rocky Mountain views</li>
+  <li>Championship golf courses set among forests and alpine landscapes</li>
+  <li>Hiking, biking, and wildlife viewing throughout the Columbia Valley</li>
+  <li>Boating, beaches, and water sports at nearby Columbia Lake</li>
+</ul>
+
+<p>With relaxing mineral hot springs and endless outdoor adventure, Fairmont is one of the Kootenays’ most beloved getaway destinations.</p>
+`,
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/fairmont_icon.png",
+        locationexternalURL: "https://www.travelcolumbiavalley.com/fairmonthotsprings/"
+      },
+
+      {
+        name: "Fernie",
+        categories: ["communities", "skiing", "adventure"],
+        x: 2959,
+        y: 3806,
+        description: `
+<p><strong>Fernie</strong> is a legendary mountain town in the Elk Valley, known for its deep powder skiing, dramatic Rocky Mountain scenery, and vibrant outdoor culture.</p>
+
+<p>Visitors can experience:</p>
+
+<ul>
+  <li>World-renowned powder skiing and snowboarding at Fernie Alpine Resort</li>
+  <li>Extensive mountain biking, hiking, and trail networks in summer</li>
+  <li>Fly fishing and rafting along the Elk River</li>
+  <li>A historic downtown filled with restaurants, cafés, shops, and festivals</li>
+</ul>
+
+<p>With year-round adventure and breathtaking alpine landscapes, Fernie is one of British Columbia’s premier mountain destinations.</p>
+`,
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Fernie_Icon.png",
+        locationexternalURL: ["https://www.tourismfernie.com", "https://www.skifernie.com", "https://tourismfernie.com/activities/white-water-rafting"]
+      },
+
+      {
+        name: "Pincher Creek",
+        categories: ["communities"],
+        x: 6020,
+        y: 4062,
+        description: `
+<p><strong>Pincher Creek</strong> is a welcoming gateway community in southwest Alberta, surrounded by dramatic foothills landscapes and some of the province’s best outdoor adventure.</p>
+
+<p>Visitors can experience:</p>
+
+<ul>
+  <li>Stunning views of the Rockie's front Ranges with breathtaiking sunrises and sunsets</li>
+  <li>A world class Rodeo and Western Fair</li>
+  <li>Wind farms and scenic drives through the rolling foothills</li>
+  <li>Local heritage and culture at the Kootenai Brown Pioneer Village</li>
+</ul>
+
+<p>With easy access to mountains, prairie, and parkland, Pincher Creek is a hub for outdoor recreation and southern Alberta exploration.</p>
+`,
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Pincher_Icon.png",
+        locationexternalURL: "https://www.pinchercreek.ca"
+      },
+
+      {
+        name: "Lethbridge",
+        categories: ["communities"],
+        x: 8588,
+        y: 3750,
+        description: `
+<p><strong>Lethbridge</strong> is a vibrant city known for its dramatic coulee landscapes, cultural attractions, and sunny prairie climate.</p>
+
+<p>Visitors can experience:</p>
+
+<ul>
+  <li>The iconic High Level Bridge, one of the longest and tallest railway trestles in the world</li>
+  <li>Extensive walking and cycling trails through the scenic Oldman River Valley</li>
+  <li>Art, history, and exhibitions at the Southern Alberta Art Gallery and local museums like Fort Whoop-Up</li>
+  <li>Restaurants, shopping, and entertainment in a lively downtown district</li>
+</ul>
+
+<p>With beautiful river valley parks and rich cultural offerings, Lethbridge is one of southern Alberta’s most distinctive destinations.</p>
+`,
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Lethbridge_Icon.png",
+        locationexternalURL: "https://tourismlethbridge.com"
+      },
+
+      {
+        name: "CNP Golf Club",
+        categories: ["golf"],
+        x: 4427,
+        y: 3736,
+        description: `
+<p><strong>Crowsnest Pass Golf Club</strong> is one of Canada’s most scenic mountain golf courses, set dramatically beneath the towering peaks of the Rocky Mountains.</p>
+
+<p>Visitors can experience:</p>
+
+<ul>
+  <li>An award-winning 18-hole championship course surrounded by spectacular alpine views</li>
+  <li>Challenging fairways and elevated tee boxes carved into the natural mountain landscape</li>
+  <li>A welcoming clubhouse with dining and panoramic views of the course and mountains</li>
+  <li>Easy access to hiking, fishing, and outdoor recreation throughout the Crowsnest Pass</li>
+</ul>
+
+<p>With breathtaking scenery and unforgettable golf, it is one of the premier mountain golf destinations in Western Canada.</p>
+`,
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/CNP_Golf_icon.png",
+        locationexternalURL: "https://crowsnestpassgolf.com"
+      },
+
+      {
+        name: "Castle Mountain Ski Resort",
+        categories: ["skiing", "adventure"],
+        x: 4687,
+        y: 4467,
+        description: `
+<p><strong>Castle Mountain Resort</strong> is a rugged alpine destination in the southern Canadian Rockies, known for its legendary powder, dramatic terrain, and authentic mountain culture.</p>
+
+<p>Visitors can experience:</p>
+
+<ul>
+  <li>Deep powder skiing and snowboarding across expansive bowls, chutes, and alpine terrain</li>
+  <li>Backcountry-style adventure and uncrowded slopes in one of Alberta’s most challenging ski areas</li>
+  <li>Summer hiking, trail running, and wildlife viewing in the surrounding Rocky Mountain wilderness</li>
+  <li>The internationally recognized <em>Sinister 7 Ultra</em> trail race through the spectacular Crowsnest Pass</li>
+</ul>
+
+<p>With year-round adventure and breathtaking mountain landscapes, Castle Mountain is one of the Rockies’ most iconic outdoor playgrounds.</p>
+`,
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/Castle_Ski_Icon.png",
+        locationexternalURL: ["https://www.skicastle.ca", "https://www.sinistersports.ca/sinister7/"]
+      },
+
+      {
+        name: "Waterton National Park",
+        categories: ["parks", "golf", "adventure"],
+        x: 6574,
+        y: 5323,
+        description: `
+<p><strong>Waterton Lakes National Park</strong> is a spectacular Rocky Mountain destination where prairie, lakes, and towering peaks meet in one of Canada’s most unique landscapes.</p>
+
+<p>Visitors can experience:</p>
+
+<ul>
+  <li>The vibrant red cliffs and scenic canyon of Red Rock Canyon</li>
+  <li>Crystal-clear mountain lakes perfect for boating, hiking, and wildlife viewing</li>
+  <li>The historic Prince of Wales Hotel overlooking Upper Waterton Lake</li>
+  <li>Cameron Falls, a beautiful waterfall located in the heart of the Waterton townsite</li>
+</ul>
+
+<p>As part of the Waterton-Glacier International Peace Park, this UNESCO World Heritage Site offers unforgettable scenery and outdoor adventure.</p>
+`,
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/waterton_icon.png",
+        locationexternalURL: "https://watertontourism.com"
+      },
+
+      {
+        name: "Lundbreck Falls",
+        categories: ["adventure", "parks"],
+        x: 5229,
+        y: 3986,
+        description: `
+<p><strong>Lundbreck Falls</strong> is a scenic stop along the Crowsnest Highway where the powerful Crowsnest River plunges dramatically over a wide limestone ledge.</p>
+
+<p>Visitors can experience:</p>
+
+<ul>
+  <li>The impressive Lundbreck Falls waterfall with viewing platforms and photo opportunities</li>
+  <li>Fishing and riverside relaxation along the Crowsnest River</li>
+  <li>Local craft beer and mountain views at the nearby Oldman River Brewing Company</li>
+  <li>Easy access to hiking, cycling, and scenic drives through the surrounding foothills</li>
+</ul>
+
+<p>With its striking waterfall and welcoming brewery nearby, Lundbreck Falls is a perfect stop for travelers exploring southwest Alberta.</p>
+`,
+        uniquePinUrl: "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/Icons/lundbreck_falls_icon.png",
+        locationexternalURL: ["https://www.albertaparks.ca/parks/south/lundbreck-falls-pra/", "https://www.oldmanriverbrewing.com"],
+        popupGalleryImages: [
+          "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/lundbreckfalls1.jpeg",
+          "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/lundbreckfalls2.jpeg",
+          "https://raw.githubusercontent.com/OBSer1/tr-context-leaflet-map/main/lundbreckfalls3.jpeg"
+        ]
+      }
+    ];
+
+    // ARRAY TO STORE ALL PIN SETS
+    const allPinSets = [];
+
+    function setPinHoverState(pinSet, isHovered) {
+      const pngEl = pinSet.pngMarker.getElement();
+      const categoryEl = pinSet.categoryMarker.getElement();
+
+      if (pngEl) {
+        pngEl.classList.toggle("pin-hover", isHovered);
+      }
+
+      if (categoryEl) {
+        categoryEl.classList.toggle("pin-hover", isHovered);
+      }
+    }
+
+    function wireHoverElevation(pinSet) {
+      const onEnter = function () {
+        setPinHoverState(pinSet, true);
+      };
+
+      const onLeave = function () {
+        setPinHoverState(pinSet, false);
+      };
+
+      pinSet.pngMarker.on("mouseover", onEnter);
+      pinSet.pngMarker.on("mouseout", onLeave);
+      pinSet.categoryMarker.on("mouseover", onEnter);
+      pinSet.categoryMarker.on("mouseout", onLeave);
+    }
+
+    function updateCarouselView(carouselEl, nextIndex) {
+      const images = JSON.parse(carouselEl.dataset.images || "[]");
+      if (!images.length) return;
+
+      const title = carouselEl.dataset.title || "Image";
+      const total = images.length;
+      const normalizedIndex = ((nextIndex % total) + total) % total;
+
+      const mainImage = carouselEl.querySelector(".popup-carousel-main-image");
+      const thumbButtons = carouselEl.querySelectorAll(".popup-carousel-thumb");
+
+      carouselEl.dataset.currentIndex = String(normalizedIndex);
+
+      if (mainImage) {
+        mainImage.src = images[normalizedIndex];
+        mainImage.alt = `${title} photo ${normalizedIndex + 1}`;
+      }
+
+      thumbButtons.forEach((btn, index) => {
+        btn.classList.toggle("active", index === normalizedIndex);
+      });
+
+      const activeThumb = carouselEl.querySelector(".popup-carousel-thumb.active");
+      if (activeThumb && typeof activeThumb.scrollIntoView === "function") {
+        activeThumb.scrollIntoView({
+          behavior: "smooth",
+          inline: "center",
+          block: "nearest"
+        });
+      }
+
+      if (map._popup) {
+        setTimeout(function () {
+          keepPopupFullyVisible(map._popup);
+        }, 20);
+      }
+    }
+
+    function initPopupCarousels(container) {
+      if (!container) return;
+
+      const carousels = container.querySelectorAll(".popup-carousel");
+
+      carousels.forEach(carouselEl => {
+        if (carouselEl.dataset.initialized === "true") return;
+
+        carouselEl.dataset.initialized = "true";
+
+        const images = JSON.parse(carouselEl.dataset.images || "[]");
+        if (!images.length) return;
+
+        const prevBtn = carouselEl.querySelector(".popup-carousel-arrow.prev");
+        const nextBtn = carouselEl.querySelector(".popup-carousel-arrow.next");
+        const thumbButtons = carouselEl.querySelectorAll(".popup-carousel-thumb");
+
+        if (prevBtn) {
+          prevBtn.addEventListener("click", function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const currentIndex = Number(carouselEl.dataset.currentIndex || 0);
+            updateCarouselView(carouselEl, currentIndex - 1);
+          });
+        }
+
+        if (nextBtn) {
+          nextBtn.addEventListener("click", function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const currentIndex = Number(carouselEl.dataset.currentIndex || 0);
+            updateCarouselView(carouselEl, currentIndex + 1);
+          });
+        }
+
+        thumbButtons.forEach((btn, index) => {
+          btn.addEventListener("click", function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            updateCarouselView(carouselEl, index);
+          });
+        });
+
+        updateCarouselView(carouselEl, 0);
+      });
+    }
+
+    // CREATE MARKERS FROM DATA
+    pinData.forEach(pin => {
+
+      // Safety fallback so older single-category objects still work
+      if (!pin.categories && pin.category) {
+        pin.categories = [pin.category];
+      }
+
+      const latlng = pointFromImagePixels(pin.x, pin.y);
+
+      // BACK MARKER: unique GitHub PNG
+      const pngMarker = L.marker(latlng, {
+        icon: makeLocationPngIcon(pin.uniquePinUrl, pin.name),
+        title: pin.name,
+        pane: "locationPinPane",
+        keyboard: false
+      });
+
+      // FRONT MARKER: category pin
+      const categoryMarker = L.marker(latlng, {
+        icon: makeCategoryIcon(pin.categories),
+        title: pin.name,
+        pane: "categoryPinPane"
+      }).bindPopup(makePopup(pin), {
+        pane: "popupPane",
+        autoPan: true,
+        keepInView: true,
+        closeButton: true,
+        maxWidth: 290,
+        autoPanPaddingTopLeft: [20, 20],
+        autoPanPaddingBottomRight: [20, 20]
+      });
+
+      // Make either marker open the same popup
+      pngMarker.on("click", function () {
+        categoryMarker.openPopup();
+      });
+
+      categoryMarker.pinMeta = pin;
+      pngMarker.pinMeta = pin;
+
+      pngMarker.addTo(map);
+      categoryMarker.addTo(map);
+
+      const pinSet = {
+        pin,
+        pngMarker,
+        categoryMarker
+      };
+
+      wireHoverElevation(pinSet);
+      allPinSets.push(pinSet);
+    });
+
+    // FILTER FUNCTION
+    function applyFilters() {
+
+      const searchInputEl = document.getElementById("pin-search");
+      const searchText = searchInputEl ? searchInputEl.value.trim().toLowerCase() : "";
+
+      const selectedCategories = [];
+      document.querySelectorAll(".category-filter").forEach(cb => {
+        if (cb.checked) selectedCategories.push(cb.value);
+      });
+
+      allPinSets.forEach(pinSet => {
+        const pin = pinSet.pin;
+
+        const matchesCategory = pin.categories.some(category =>
+          selectedCategories.includes(category)
+        );
+
+        const categorySearchText = pin.categories
+          .map(category => getCategoryLabel(category))
+          .join(", ")
+          .toLowerCase();
+
+        const descriptionText = String(pin.description || "")
+          .replace(/<[^>]*>/g, " ")
+          .toLowerCase();
+
+        const matchesSearch =
+          pin.name.toLowerCase().includes(searchText) ||
+          descriptionText.includes(searchText) ||
+          categorySearchText.includes(searchText);
+
+        const shouldShow = matchesCategory && matchesSearch;
+
+        if (shouldShow) {
+          if (!map.hasLayer(pinSet.pngMarker)) {
+            pinSet.pngMarker.addTo(map);
+          }
+          if (!map.hasLayer(pinSet.categoryMarker)) {
+            pinSet.categoryMarker.addTo(map);
+          }
+        } else {
+          if (map.hasLayer(pinSet.pngMarker)) {
+            map.removeLayer(pinSet.pngMarker);
+          }
+          if (map.hasLayer(pinSet.categoryMarker)) {
+            map.removeLayer(pinSet.categoryMarker);
+          }
+        }
+      });
+    }
+
+    // CUSTOM CONTROL PANEL
+    const FilterControl = L.Control.extend({
+
+      options: {
+        position: "topright"
+      },
+
+      onAdd: function () {
+
+        const div = L.DomUtil.create("div", "map-ui");
+
+        const categoryCheckboxHtml = categoryDefinitions.map(cat => `
+          <label>
+            <input type="checkbox" class="category-filter" value="${cat.value}" checked />
+            <span class="legend-dot ${cat.legendClass}"></span>
+            <span>${cat.label}</span>
+          </label>
+        `).join("");
+
+        div.innerHTML = `
+          <div class="map-ui-header">
+            <button
+              type="button"
+              class="panel-toggle-icon"
+              id="panel-toggle-btn"
+              aria-label="Hide panel"
+              title="Hide panel"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5"></circle>
+                <path d="M16 16L21 21"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="map-ui-body">
+            <input id="pin-search" class="search-input" type="text" placeholder="Search pins..." />
+
+            <label>
+              <input type="checkbox" class="toggle-all" checked />
+              <span>Show all categories</span>
+            </label>
+
+            ${categoryCheckboxHtml}
+          </div>
+        `;
+
+        L.DomEvent.disableClickPropagation(div);
+        L.DomEvent.disableScrollPropagation(div);
+
+        return div;
+      }
+    });
+
+    // ADD CONTROLS TO MAP
+    map.addControl(new FilterControl());
+
+    // GET UI ELEMENTS
+    const mapUi = document.querySelector(".map-ui");
+    const searchInput = document.getElementById("pin-search");
+    const toggleAll = document.querySelector(".toggle-all");
+    const categoryCheckboxes = document.querySelectorAll(".category-filter");
+    const panelToggleButton = document.getElementById("panel-toggle-btn");
+
+    // PANEL STATE HELPERS
+    let firstAutoHideHandled = false;
+    let firstAutoHideTimer = null;
+
+    function clearFirstAutoHideTimer() {
+      if (firstAutoHideTimer) {
+        clearTimeout(firstAutoHideTimer);
+        firstAutoHideTimer = null;
+      }
+    }
+
+    function updatePanelButtonState() {
+      if (mapUi.classList.contains("collapsed")) {
+        panelToggleButton.setAttribute("aria-label", "Show panel");
+        panelToggleButton.setAttribute("title", "Show panel");
+      } else {
+        panelToggleButton.setAttribute("aria-label", "Hide panel");
+        panelToggleButton.setAttribute("title", "Hide panel");
+      }
+    }
+
+    function collapsePanel() {
+      if (mapUi.classList.contains("collapsed")) return;
+
+      mapUi.classList.add("collapsed");
+      updatePanelButtonState();
+
+      const openPopup = map._popup;
+      if (openPopup) {
+        setTimeout(function () {
+          keepPopupFullyVisible(openPopup);
+        }, 60);
+      }
+    }
+
+    function expandPanel() {
+      if (!mapUi.classList.contains("collapsed")) return;
+
+      mapUi.classList.remove("collapsed");
+      updatePanelButtonState();
+
+      const openPopup = map._popup;
+      if (openPopup) {
+        setTimeout(function () {
+          keepPopupFullyVisible(openPopup);
+        }, 60);
+      }
+    }
+
+    function scheduleFirstAutoHide() {
+      if (firstAutoHideHandled) return;
+
+      clearFirstAutoHideTimer();
+      firstAutoHideTimer = setTimeout(function () {
+        firstAutoHideHandled = true;
+        collapsePanel();
+      }, 8000);
+    }
+
+    function handleFirstUserMapInteractionCollapse() {
+      if (!firstAutoHideHandled) {
+        firstAutoHideHandled = true;
+        clearFirstAutoHideTimer();
+      }
+      collapsePanel();
+    }
+
+    // COLLAPSE / EXPAND PANEL
+    panelToggleButton.addEventListener("click", function () {
+      if (mapUi.classList.contains("collapsed")) {
+        expandPanel();
+      } else {
+        collapsePanel();
+      }
+    });
+
+    // SEARCH INPUT EVENT
+    searchInput.addEventListener("input", applyFilters);
+
+    // TOGGLE ALL CATEGORIES
+    toggleAll.addEventListener("change", function () {
+      categoryCheckboxes.forEach(cb => {
+        cb.checked = toggleAll.checked;
+      });
+      applyFilters();
+    });
+
+    // INDIVIDUAL CATEGORY TOGGLES
+    categoryCheckboxes.forEach(cb => {
+      cb.addEventListener("change", function () {
+        const allChecked = Array.from(categoryCheckboxes).every(box => box.checked);
+        toggleAll.checked = allChecked;
+        applyFilters();
+      });
+    });
+
+    // INITIALIZE FILTER STATE
+    applyFilters();
+    updatePanelButtonState();
+    scheduleFirstAutoHide();
+
+    // Collapse immediately if user drags or zooms the map
+    map.on("dragstart", handleFirstUserMapInteractionCollapse);
+    map.on("zoomstart", handleFirstUserMapInteractionCollapse);
+
+    // Figure out how much padding the map needs so popups do not hide behind controls
+    function getVisibleMapPadding() {
+      const panel = document.querySelector(".map-ui");
+      const bottomRightControls = document.querySelector(".leaflet-bottom.leaflet-right");
+
+      let topInset = 20;
+      let rightInset = 20;
+      let bottomInset = 20;
+      let leftInset = 20;
+
+      if (panel) {
+        const panelRect = panel.getBoundingClientRect();
+        topInset = Math.max(topInset, Math.ceil(panelRect.height) + 18);
+        rightInset = Math.max(rightInset, Math.ceil(panelRect.width) + 24);
+      }
+
+      if (bottomRightControls) {
+        const controlsRect = bottomRightControls.getBoundingClientRect();
+        rightInset = Math.max(rightInset, Math.ceil(controlsRect.width) + 20);
+        bottomInset = Math.max(bottomInset, Math.ceil(controlsRect.height) + 20);
+      }
+
+      return {
+        topLeft: [leftInset, topInset],
+        bottomRight: [rightInset, bottomInset]
+      };
+    }
+
+    // Re-pan popup so it stays fully on screen and away from controls
+    function keepPopupFullyVisible(popup) {
+      if (!popup || !popup._map || !popup._container) return;
+
+      const padding = getVisibleMapPadding();
+
+      popup.options.autoPan = true;
+      popup.options.keepInView = true;
+      popup.options.autoPanPaddingTopLeft = padding.topLeft;
+      popup.options.autoPanPaddingBottomRight = padding.bottomRight;
+
+      popup.update();
+
+      setTimeout(function () {
+        if (!popup._map || !popup._container) return;
+
+        setTimeout(function () {
+          if (!popup._map || !popup._container) return;
+
+          const mapRect = map.getContainer().getBoundingClientRect();
+          const popupRect = popup._container.getBoundingClientRect();
+
+          const safeLeft = mapRect.left + padding.topLeft[0];
+          const safeTop = mapRect.top + padding.topLeft[1];
+          const safeRight = mapRect.right - padding.bottomRight[0];
+          const safeBottom = mapRect.bottom - padding.bottomRight[1];
+
+          let dx = 0;
+          let dy = 0;
+
+          if (popupRect.right > safeRight) {
+            dx = popupRect.right - safeRight;
+          } else if (popupRect.left < safeLeft) {
+            dx = popupRect.left - safeLeft;
+          }
+
+          if (popupRect.bottom > safeBottom) {
+            dy = popupRect.bottom - safeBottom;
+          } else if (popupRect.top < safeTop) {
+            dy = popupRect.top - safeTop;
+          }
+
+          if (dx !== 0 || dy !== 0) {
+            map.panBy([dx, dy], {
+              animate: true,
+              duration: 0.25
+            });
+          }
+        }, 30);
+      }, 20);
+    }
+
+    map.on("popupopen", function (e) {
+      initPopupCarousels(e.popup.getElement());
+      keepPopupFullyVisible(e.popup);
+    });
+
+    map.on("resize", function () {
+      if (map._popup) {
+        keepPopupFullyVisible(map._popup);
+      }
+    });
+
+  </script>
 </body>
 </html>
