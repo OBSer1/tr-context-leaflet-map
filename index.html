@@ -88,11 +88,19 @@
         0 10px 28px rgba(0, 0, 0, 0.22),
         0 3px 10px rgba(0, 0, 0, 0.10);
       padding: 12px;
-      min-width: 220px;
+      width: 260px;
+      min-width: 260px;
       max-width: 260px;
+      overflow: hidden;
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
+      transform-origin: top right;
       transition:
+        width 1000ms ease,
+        min-width 1000ms ease,
+        max-width 1000ms ease,
+        padding 1000ms ease,
+        border-radius 1000ms ease,
         box-shadow 180ms ease,
         background 180ms ease;
     }
@@ -151,6 +159,7 @@
       justify-content: space-between;
       gap: 10px;
       margin-bottom: 10px;
+      transition: margin-bottom 1000ms ease;
     }
 
     /* Magnifying glass toggle button */
@@ -204,18 +213,32 @@
       animation: panelPulse 1.6s ease-in-out infinite;
     }
 
-    /* Panel body that can be hidden */
+    /* Panel body that now animates open/closed */
     .map-ui-body {
       display: block;
-    }
-
-    .map-ui.collapsed .map-ui-body {
-      display: none;
+      max-height: 520px;
+      opacity: 1;
+      transform: scale(1);
+      transform-origin: top right;
+      overflow: hidden;
+      transition:
+        max-height 1000ms ease,
+        opacity 1000ms ease,
+        transform 1000ms ease;
     }
 
     .map-ui.collapsed {
-      min-width: auto;
+      width: 58px;
+      min-width: 58px;
+      max-width: 58px;
       padding: 12px;
+    }
+
+    .map-ui.collapsed .map-ui-body {
+      max-height: 0;
+      opacity: 0;
+      transform: scale(0.82);
+      pointer-events: none;
     }
 
     .map-ui.collapsed .map-ui-header {
@@ -671,7 +694,15 @@
       }
 
       .map-ui {
+        width: 230px;
+        min-width: 230px;
         max-width: 230px;
+      }
+
+      .map-ui.collapsed {
+        width: 58px;
+        min-width: 58px;
+        max-width: 58px;
       }
     }
 
@@ -1600,6 +1631,7 @@
     // PANEL STATE HELPERS
     let firstAutoHideHandled = false;
     let firstAutoHideTimer = null;
+    const panelTransitionDuration = 1000;
 
     function clearFirstAutoHideTimer() {
       if (firstAutoHideTimer) {
@@ -1628,7 +1660,7 @@
       if (openPopup) {
         setTimeout(function () {
           keepPopupFullyVisible(openPopup);
-        }, 60);
+        }, panelTransitionDuration + 40);
       }
     }
 
@@ -1642,7 +1674,7 @@
       if (openPopup) {
         setTimeout(function () {
           keepPopupFullyVisible(openPopup);
-        }, 60);
+        }, panelTransitionDuration + 40);
       }
     }
 
@@ -1653,7 +1685,7 @@
       firstAutoHideTimer = setTimeout(function () {
         firstAutoHideHandled = true;
         collapsePanel();
-      }, 8000);
+      }, 1000);
     }
 
     function handleFirstUserMapInteractionCollapse() {
